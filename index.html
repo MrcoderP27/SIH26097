@@ -101,30 +101,215 @@
     }
 
     async function sendToBackend(text) {
-        statusText.innerText = 'Processing...';
-        outputDiv.innerText = `Aap: ${text}\n\nAI: Soch raha hoon...`;
-        try {
-            const res = await fetch('http://localhost:5000/api/kiosk-flow', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, session_id: sessionId })
+    statusText.innerText = 'Processing...';
+    outputDiv.innerText = `Aap: ${text}\n\nAI: Soch raha hoon...`;
+
+    console.log("STT TEXT SENT TO BACKEND:", text);
+    
+    try {
+        const res = await fetch('http://127.0.0.1:8000/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                message: text
+            })
+        });
+
+        const data = await res.json();
+
+        const replyMsg = data.assistant || data.next_question || "Jawab nahi mila";
+
+let displayText = `Aap: ${text}\n\nAI: ${replyMsg}`;
+
+const recommendations = data.recommendations;
+
+if (recommendations) {
+
+    const qualifications =
+        recommendations.qualification_matches || [];
+
+    const jobs =
+        recommendations.job_or_scheme_matches || [];
+
+    if (qualifications.length > 0 || jobs.length > 0) {
+
+        displayText += "\n\n📚 आपके लिए सुझाव:\n";
+
+        // =================================================
+        // QUALIFICATIONS / TRAINING
+        // =================================================
+
+        if (qualifications.length > 0) {
+
+            displayText +=
+                "\n🎓 प्रशिक्षण / Qualification:\n";
+
+            qualifications.forEach((item, index) => {
+
+                const record = item.record || {};
+
+                let name = record.title || record.name || "Training";
+
+                // title may be multilingual object:
+                // { "en": "...", "hi": "..." }
+
+                if (typeof name === "object") {
+                    name =
+                        name.hi ||
+                        name.en ||
+                        Object.values(name)[0] ||
+                        "Training";
+                }
+
+                displayText +=
+                    `${index + 1}. ${name}\n`;
+
+                if (item.reasons && item.reasons.length > 0) {
+
+                    displayText +=
+                        `   क्यों: ${item.reasons.join(" ")}\n`;
+                }
+
+                displayText +=
+                    `   Match Score: ${item.score}\n`;
             });
-            const data = await res.json();
-            
-            const replyMsg = data.reply || data.message || "Jawab nahi mila";
-            outputDiv.innerText = `Aap: ${text}\n\nAI: ${replyMsg}`;
-            speakResponse(replyMsg);
+        }
 
-            if (data.urgent_flag) {
-                urgentBadge.style.display = 'block';
-            }
+        // =================================================
+        // JOBS / SCHEMES / LIVELIHOOD
+        // =================================================
 
-            statusText.innerText = 'Done!';
-        } catch (err) {
-            outputDiv.innerText = `Aap: ${text}\n\nAI: Server connection error!`;
-            statusText.innerText = 'Failed';
+        if (jobs.length > 0) {
+
+            displayText +=
+                "\n💼 Job / Scheme / Livelihood:\n";
+
+            jobs.forEach((item, index) => {
+
+                const record = item.record || {};
+
+                let name =
+                    record.job_title ||
+                    record.title ||
+                    record.name ||
+                    "Opportunity";
+
+                // job_title may also be multilingual
+
+                if (typeof name === "object") {
+                    name =
+                        name.hi ||
+                        name.en ||
+                        Object.values(name)[0] ||
+                        "Opportunity";
+                }
+
+                displayText +=
+                    `${index + 1}. ${name}\n`;
+
+                if (item.reasons && item.reasons.length > 0) {
+
+                    displayText +=
+                        `   क्यों: ${item.reasons.join(" ")}\n`;
+                }
+
+                displayText +=
+                    `   Match Score: ${item.score}\n`;
+            });
         }
     }
+}
+
+outputDiv.innerText = displayText;
+
+let recommendationSpeech = '';
+
+if (recommendations) {
+    const qualifications = recommendations.qualification_matches || [];
+    const jobs = recommendations.job_or_scheme_matches || [];
+
+    if (qualifications.length > 0) {
+        recommendationSpeech += 'आपके लिए सुझाए गए प्रशिक्षण हैं। ';
+
+        qualifications.forEach((item, index) => {
+            const record = item.record || item;
+
+            const name =
+                getLocalizedName(record.title) ||
+                getLocalizedName(record.name) ||
+                getLocalizedName(record.qualification) ||
+                'प्रशिक्षण विकल्प';
+
+            recommendationSpeech += `${index + 1}. ${name}. `;
+
+            if (item.reasons && item.reasons.length > 0) {
+                recommendationSpeech += `क्योंकि ${item.reasons.join(' और ')}. `;
+            }
+        });
+    }
+
+    if (jobs.length > 0) {
+        recommendationSpeech += 'आपके लिए सुझाए गए आजीविका विकल्प हैं। ';
+
+        jobs.forEach((item, index) => {
+            const record = item.record || item;
+
+            const name =
+                getLocalizedName(record.title) ||
+                getLocalizedName(record.name) ||
+                getLocalizedName(record.job_title) ||
+                getLocalizedName(record.scheme_name) ||
+                'आजीविका विकल्प';
+
+            recommendationSpeech += `${index + 1}. ${name}. `;
+
+            if (item.reasons && item.reasons.length > 0) {
+                recommendationSpeech += `क्योंकि ${item.reasons.join(' और ')}. `;
+            }
+        });
+    }
+}
+function getLocalizedName(value) {
+    if (!value) return '';
+
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    if (typeof value === 'object') {
+        return (
+            value.hi ||
+            value.hindi ||
+            value.en ||
+            value.english ||
+            Object.values(value)[0] ||
+            ''
+        );
+    }
+
+    return String(value);
+}
+
+speakResponse(replyMsg + ' ' + recommendationSpeech);
+
+        if (data.urgent_flag) {
+            urgentBadge.style.display = 'block';
+        }
+
+        statusText.innerText = 'Done!';
+
+    } catch (err) {
+        console.error("Backend connection error:", err);
+
+        outputDiv.innerText =
+            `Aap: ${text}\n\nAI: Server connection error!`;
+
+        statusText.innerText = 'Failed';
+    }
+}
 
     function speakResponse(text) {
         if ('speechSynthesis' in window) {

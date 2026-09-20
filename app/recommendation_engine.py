@@ -1177,9 +1177,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The qualification is related to "
-                "the beneficiary's current or "
-                "traditional occupation."
+                "यह प्रशिक्षण लाभार्थी के वर्तमान या पारंपरिक व्यवसाय से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1206,8 +1204,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The qualification is related to "
-                "the beneficiary's stated skills."
+                "यह प्रशिक्षण लाभार्थी के वर्तमान बताई गई कौशल से संबंधित है।" 
             )
 
         # -----------------------------------------------------
@@ -1234,8 +1231,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The qualification is related to "
-                "the beneficiary's stated interests."
+                "यह प्रशिक्षण लाभार्थी के वर्तमान या पारंपरिक बताई गई रुचियों से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1262,8 +1258,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The qualification is related to "
-                "the beneficiary's stated aspiration."
+                "यह प्रशिक्षण लाभार्थी के वर्तमान आकांक्षा से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1370,8 +1365,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The opportunity is related to "
-                "the beneficiary's occupation."
+                "यह अवसर लाभार्थी के व्यवसाय से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1398,8 +1392,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The opportunity is related to "
-                "the beneficiary's skills."
+                "यह अवसर लाभार्थी के कौशल से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1426,8 +1419,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The opportunity is related to "
-                "the beneficiary's interests."
+                "यह अवसर लाभार्थी के रुचियों से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1454,8 +1446,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "The opportunity is related to "
-                "the beneficiary's aspiration."
+                "यह अवसर लाभार्थी के आशा से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1500,8 +1491,7 @@ class RecommendationEngine:
                 )
 
                 reasons.append(
-                    "The opportunity supports the "
-                    "beneficiary's employment preference."
+                    "यह अवसर लाभार्थी के रोजगार प्राधार से संबंधित है।"
                 )
 
             else:

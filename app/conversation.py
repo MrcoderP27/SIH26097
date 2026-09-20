@@ -83,7 +83,6 @@ HINGLISH_MARKERS = {
     "mein",
     "se",
     "par",
-    "ke liye",
 }
 
 
@@ -139,13 +138,22 @@ LANGUAGE_NAMES = {
 # ============================================================
 
 def normalize_text(text: str) -> str:
-    return re.sub(r"\s+", " ", text.strip())
+    if text is None:
+        return ""
+
+    text = str(text)
+
+    return re.sub(
+        r"\s+",
+        " ",
+        text.strip(),
+    )
 
 
 def normalize_for_match(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r"\s+", " ", text)
-    return text
+    text = normalize_text(text)
+
+    return text.lower()
 
 
 def clean_value(value: Any) -> Any:
@@ -185,10 +193,10 @@ def clean_extracted_phrase(value: str) -> str:
 
     value = normalize_text(value)
 
-    # Remove accidental leading/trailing punctuation.
-    value = value.strip(" ,.;:!?।")
+    value = value.strip(
+        " ,.;:!?।"
+    )
 
-    # Never allow a complete second sentence.
     value = re.split(
         r"[.!?;।\n]",
         value,
@@ -203,7 +211,7 @@ def sentence_segments(text: str) -> List[str]:
 
     parts = re.split(
         r"[.!?;।,\n]+",
-        text,
+        normalize_text(text),
     )
 
     return [
@@ -334,25 +342,62 @@ def extract_age(
 
     patterns = [
 
-        # Roman Hindi
-        r"\bmain\s+(\d{1,3})\s+saal\s+ka\s+hoon\b",
-        r"\bmain\s+(\d{1,3})\s+saal\s+ki\s+hoon\b",
+        # Hindi:
+        # मैं 24 साल का हूं
+        # मैं 24 साल का हूँ
+        # मैं 24 साल की हूं
+        # मैं 24 साल की हूँ
+        r"मैं\s+(\d{1,3})\s*(?:साल|वर्ष)\s*(?:का|की)?\s*(?:हूं|हूँ)",
 
-        # English
-        r"\bmeri\s+age\s+(\d{1,3})\b",
-        r"\bmy\s+age\s+is\s+(\d{1,3})\b",
-        r"\bi\s+am\s+(\d{1,3})\s+years?\s+old\b",
-        r"\bi'm\s+(\d{1,3})\s+years?\s+old\b",
+        # मेरी उम्र 24 साल है
+        # मेरी उम्र 24 वर्ष है
+        # मेरी उम्र 24 है
+        r"मेरी\s+उम्र\s+(\d{1,3})\s*(?:साल|वर्ष)?\s*(?:है|हैं)",
 
-        # Devanagari
-        r"मैं\s+(\d{1,3})\s+साल\s+का\s+हूँ",
-        r"मैं\s+(\d{1,3})\s+साल\s+की\s+हूँ",
-        r"मैं\s+(\d{1,3})\s+वर्ष\s+का\s+हूँ",
-        r"मैं\s+(\d{1,3})\s+वर्ष\s+की\s+हूँ",
+        # उम्र 24 साल है
+        r"उम्र\s+(\d{1,3})\s*(?:साल|वर्ष)?\s*(?:है|हैं)",
 
-        # Short Hindi forms
-        r"मेरी\s+उम्र\s+(\d{1,3})\s+साल\s+है",
-        r"मेरी\s+उम्र\s+(\d{1,3})\s+वर्ष\s+है",
+        # मेरी उम्र है 24 साल
+        r"मेरी\s+उम्र\s+(?:है\s+)?(\d{1,3})\s*(?:साल|वर्ष)",
+
+        # मैं 24 का हूं
+        r"मैं\s+(\d{1,3})\s*(?:का|की)\s*(?:हूं|हूँ)",
+
+        # Roman Hindi:
+        # meri age 24 hai
+        r"\bmeri\s+age\s+(\d{1,3})\s*(?:years?|yrs?)?\s*(?:hai|है)\b",
+
+        # Roman Hindi:
+        # main 24 saal ka hoon
+        r"\bmain\s+(\d{1,3})\s*(?:saal|varsh)\s*(?:ka|ki)?\s*(?:hoon|hun)\b",
+
+        # Roman Hindi:
+        # meri umar 24 saal hai
+        r"\bmeri\s+umar\s+(\d{1,3})\s*(?:saal|years?)?\s*(?:hai)\b",
+
+        # English:
+        # I am 24 years old
+        r"\bI\s+am\s+(\d{1,3})\s*(?:years?|yrs?)?\s*old\b",
+
+        # English:
+        # I'm 24 years old
+        r"\bI\s*['’]?m\s+(\d{1,3})\s*(?:years?|yrs?)?\s*old\b",
+
+        # English:
+        # My age is 24
+        r"\bmy\s+age\s+is\s+(\d{1,3})\s*(?:years?|yrs?)?\b",
+
+        # English:
+        # I am 24 years
+        r"\bI\s+am\s+(\d{1,3})\s*(?:years?|yrs?)\b",
+
+        # English:
+        # I am 24
+        r"\bI\s+am\s+(\d{1,3})\b",
+
+        # Standalone spoken Hindi:
+        # 24 साल का हूं
+        r"\b(\d{1,3})\s*(?:साल|वर्ष)\s*(?:का|की)?\s*(?:हूं|हूँ)\b",
     ]
 
     for pattern in patterns:
@@ -363,13 +408,23 @@ def extract_age(
             flags=re.IGNORECASE,
         )
 
-        if match:
+        if not match:
+            continue
 
-            return (
-                int(match.group(1)),
-                1.0,
-                [match.group(0).strip()],
-            )
+        try:
+            age = int(match.group(1))
+        except (ValueError, TypeError):
+            continue
+
+        # Reasonable human age validation.
+        if not 1 <= age <= 120:
+            continue
+
+        return (
+            age,
+            1.0,
+            [match.group(0).strip()],
+        )
 
     return None
 
@@ -384,29 +439,113 @@ def extract_education(
 
     patterns = [
 
-        # Roman Hindi / English
-        r"\b(\d{1,2})(?:st|nd|rd|th)\s+pass\b",
-        r"\b(\d{1,2})(?:st|nd|rd|th)\s+t[a]k\b",
-        r"\bstudied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
-        r"\bclass\s+(\d{1,2})\b",
-        r"\b(\d{1,2})वीं\b",
-        r"\b10th\b",
-        r"\b12th\b",
+        # English
+        (
+            r"\b(\d{1,2})(?:st|nd|rd|th)\s+pass\b",
+            "numeric",
+        ),
 
-        # Devanagari
-        r"(\d{1,2})वीं\s+कक्षा",
-        r"(\d{1,2})वीं\s+तक",
-        r"(\d{1,2})वीं\s+पास",
-        r"कक्षा\s*(\d{1,2})",
-        r"(\d{1,2})\s*वीं",
+        (
+            r"\b(\d{1,2})(?:st|nd|rd|th)\s+till\b",
+            "numeric",
+        ),
 
-        # Explicit Hindi sentence:
-        # मैंने 10वीं कक्षा तक पढ़ाई की है
-        r"(\d{1,2})वीं\s+कक्षा\s+तक\s+पढ़ाई",
-        r"(\d{1,2})वीं\s+तक\s+पढ़ाई",
+        (
+            r"\bstudied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
+            "numeric",
+        ),
+
+        (
+            r"\bstudied\s+up\s+to\s+(\d{1,2})(?:st|nd|rd|th)\b",
+            "numeric",
+        ),
+
+        (
+            r"\bclass\s+(\d{1,2})\b",
+            "class",
+        ),
+
+        (
+            r"\b(\d{1,2})(?:st|nd|rd|th)\s+class\b",
+            "numeric",
+        ),
+
+        # Hindi numeric
+        (
+            r"(\d{1,2})वीं\s+कक्षा",
+            "numeric_hindi",
+        ),
+
+        (
+            r"(\d{1,2})वीं\s+तक",
+            "numeric_hindi",
+        ),
+
+        (
+            r"(\d{1,2})वीं\s+पास",
+            "numeric_hindi",
+        ),
+
+        (
+            r"कक्षा\s*(\d{1,2})",
+            "numeric_hindi",
+        ),
+
+        # Hindi word forms
+        (
+            r"दसवीं\s+(?:कक्षा|तक|पास)",
+            "10th",
+        ),
+
+        (
+            r"बारहवीं\s+(?:कक्षा|तक|पास)",
+            "12th",
+        ),
+
+        (
+            r"ग्यारहवीं\s+(?:कक्षा|तक|पास)",
+            "11th",
+        ),
+
+        (
+            r"आठवीं\s+(?:कक्षा|तक|पास)",
+            "8th",
+        ),
+
+        (
+            r"(?:पाँचवीं|पांचवीं)\s+(?:कक्षा|तक|पास)",
+            "5th",
+        ),
+
+        # Common education sentences
+        (
+            r"दसवीं\s+(?:कक्षा\s+)?तक\s+पढ़ाई",
+            "10th",
+        ),
+
+        (
+            r"बारहवीं\s+(?:कक्षा\s+)?तक\s+पढ़ाई",
+            "12th",
+        ),
+
+        # English full sentences
+        (
+            r"\bi\s+have\s+studied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
+            "numeric",
+        ),
+
+        (
+            r"\bi\s+studied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
+            "numeric",
+        ),
+
+        (
+            r"\bi\s+have\s+studied\s+up\s+to\s+(\d{1,2})(?:st|nd|rd|th)\b",
+            "numeric",
+        ),
     ]
 
-    for pattern in patterns:
+    for pattern, result_type in patterns:
 
         match = re.search(
             pattern,
@@ -414,21 +553,50 @@ def extract_education(
             flags=re.IGNORECASE,
         )
 
-        if match:
+        if not match:
+            continue
 
-            if match.groups():
+        if result_type == "10th":
+            value = "10th"
 
-                value = match.group(1)
+        elif result_type == "12th":
+            value = "12th"
 
-            else:
+        elif result_type == "11th":
+            value = "11th"
 
-                value = match.group(0)
+        elif result_type == "8th":
+            value = "8th"
 
-            return (
-                value,
-                1.0,
-                [match.group(0).strip()],
-            )
+        elif result_type == "5th":
+            value = "5th"
+
+        elif result_type in {
+            "numeric",
+            "numeric_hindi",
+            "class",
+        }:
+
+            number = match.group(1)
+
+            try:
+                number = int(number)
+            except (ValueError, TypeError):
+                continue
+
+            if not 1 <= number <= 20:
+                continue
+
+            value = f"{number}th"
+
+        else:
+            continue
+
+        return (
+            value,
+            1.0,
+            [match.group(0).strip()],
+        )
 
     return None
 
@@ -443,13 +611,16 @@ def extract_experience(
 
     patterns = [
 
-        # Roman / English
+        # Roman Hindi / English
         r"\b(\d+)\s+saal\s+(?:ka\s+)?experience\b",
+
         r"\bexperience\s+(?:of\s+)?(\d+)\s+years?\b",
+
         r"\b(\d+)\s+years?\s+of\s+experience\b",
 
         # Devanagari
         r"(\d+)\s+साल\s+(?:का\s+)?अनुभव",
+
         r"(\d+)\s+वर्ष\s+(?:का\s+)?अनुभव",
     ]
 
@@ -552,67 +723,54 @@ def extract_current_occupation(
     patterns = [
 
         # Roman Hindi:
-        # Main tailoring ka kaam karta hoon
         (
             r"\bmain\s+([^,.;!?।\n]+?)\s+ka\s+kaam\s+"
-            r"(?:karta|karti)\s+hoon\b",
-            3,
+            r"(?:karta|karti)\s+(?:hoon|hun)\b",
+            5,
         ),
 
-        # Main tailoring karta hoon
         (
             r"\bmain\s+([^,.;!?।\n]+?)\s+"
-            r"(?:karta|karti)\s+hoon\b",
-            1,
+            r"(?:karta|karti)\s+(?:hoon|hun)\b",
+            3,
         ),
 
         # English
         (
             r"\bi\s+work\s+as\s+([^,.;!?।\n]+)",
-            3,
+            4,
         ),
 
         (
             r"\bi\s+work\s+in\s+([^,.;!?।\n]+)",
-            3,
+            4,
         ),
 
         (
             r"\bi\s+am\s+working\s+as\s+([^,.;!?।\n]+)",
-            3,
+            4,
         ),
 
         (
             r"\bi\s+do\s+([^,.;!?।\n]+)",
-            1,
-        ),
-
-        # ----------------------------------------------------
-        # Devanagari
-        # ----------------------------------------------------
-
-        # मैं दर्ज़ी का काम करता हूँ
-        (
-            r"मैं\s+([^,.;!?।\n]+?)\s+का\s+काम\s+"
-            r"(?:करता|करती)\s+हूँ",
-            5,
-        ),
-
-        # मैं दर्जी का काम करता हूं
-        (
-            r"मैं\s+([^,.;!?।\n]+?)\s+का\s+काम\s+"
-            r"(?:करता|करती)\s+हूं",
-            5,
-        ),
-
-        # मैं दर्ज़ी हूँ
-        (
-            r"मैं\s+([^,.;!?।\n]+?)\s+हूँ",
             2,
         ),
 
+        # Devanagari
         (
-            r"मैं\s+([^,.;!?।\n]+?)\s+हूं",
+            r"मैं\s+([^,.;!?।\n]+?)\s+का\s+काम\s+"
+            r"(?:करता|करती)\s+(?:हूँ|हूं)",
+            5,
+        ),
+
+        (
+            r"मैं\s+([^,.;!?।\n]+?)\s+"
+            r"(?:करता|करती)\s+(?:हूँ|हूं)",
+            3,
+        ),
+
+        (
+            r"मैं\s+([^,.;!?।\n]+?)\s+(?:हूँ|हूं)",
             2,
         ),
     ]
@@ -674,21 +832,39 @@ def extract_skills(
     patterns = [
 
         # Roman Hindi
-        r"\bmujhe\s+([^,.;!?।\n]+?)\s+(?:aati|aata|aate)\s+hai",
-        r"\bmujhe\s+([^,.;!?।\n]+?)\s+(?:aati|aata|aate)\s+hain",
+        (
+            r"\bmujhe\s+([^,.;!?।\n]+?)\s+"
+            r"(?:aati|aata|aate)\s+(?:hai|hain)\b"
+        ),
+
+        # Explicit skill sentence
+        (
+            r"\bmy\s+skills?\s+(?:are|include)\s+"
+            r"([^,.;!?।\n]+)"
+        ),
+
+        (
+            r"\bi\s+have\s+skills?\s+in\s+"
+            r"([^,.;!?।\n]+)"
+        ),
 
         # English
-        r"\bmy\s+skills?\s+(?:are|include)\s+([^,.;!?।\n]+)",
-        r"\bi\s+have\s+skills?\s+in\s+([^,.;!?।\n]+)",
-        r"\bi\s+can\s+([^,.;!?।\n]+)",
+        (
+            r"\bi\s+can\s+([^,.;!?।\n]+)"
+        ),
 
         # Devanagari
-        r"मुझे\s+([^,.;!?।\n]+?)\s+आती\s+है",
-        r"मुझे\s+([^,.;!?।\n]+?)\s+आता\s+है",
-        r"मुझे\s+([^,.;!?।\n]+?)\s+आते\s+हैं",
+        (
+            r"मुझे\s+([^,.;!?।\n]+?)\s+"
+            r"(?:आती|आता|आते)\s+(?:है|हैं)"
+        ),
 
-        # मुझे सिलाई और कपड़े बनाना आता है
-        r"मुझे\s+([^,.;!?।\n]+?)\s+आता\s+है",
+        # Explicit कौशल
+        (
+            r"(?:मेरे\s+)?(?:कौशल|हुनर)\s+"
+            r"(?:हैं|है)\s*[:\-]?\s*"
+            r"([^,.;!?।\n]+)"
+        ),
     ]
 
     for pattern in patterns:
@@ -699,19 +875,43 @@ def extract_skills(
             flags=re.IGNORECASE,
         )
 
-        if match:
+        if not match:
+            continue
 
-            value = clean_extracted_phrase(
-                match.group(1)
-            )
+        value = clean_extracted_phrase(
+            match.group(1)
+        )
 
-            if value:
+        if not value:
+            continue
 
-                return (
-                    value,
-                    1.0,
-                    [match.group(0).strip()],
-                )
+        # Avoid capturing unrelated clauses.
+        bad_terms = {
+            "नाम",
+            "उम्र",
+            "पढ़ाई",
+            "रहता",
+            "रहती",
+            "इंदौर",
+            "हिंदी",
+            "अंग्रेज़ी",
+            "अंग्रेजी",
+        }
+
+        value_words = set(
+            value.split()
+        )
+
+        if value_words.intersection(
+            bad_terms
+        ):
+            continue
+
+        return (
+            value,
+            1.0,
+            [match.group(0).strip()],
+        )
 
     return None
 
@@ -794,21 +994,18 @@ def normalize_interest_value(
         value
     )
 
-    # Direct canonical mapping.
     if normalized in INTEREST_NORMALIZATION:
 
         return INTEREST_NORMALIZATION[
             normalized
         ]
 
-    # Devanagari exact matching.
     if value in INTEREST_NORMALIZATION:
 
         return INTEREST_NORMALIZATION[
             value
         ]
 
-    # Handle compound interest phrases.
     if (
         "welding" in normalized
         and (
@@ -847,33 +1044,13 @@ def extract_interests(
     text: str,
 ) -> Optional[Tuple[Any, float, List[str]]]:
 
-    """
-    Robust interest extraction.
-
-    Supports:
-    - Roman Hindi
-    - Hinglish
-    - English
-    - Devanagari Hindi
-    - interest
-    - interested
-    - pasand
-    - ruchi
-    - like
-    - enjoy
-    - multiple interests
-    """
-
     original_text = normalize_text(
         text
     )
 
     patterns = [
 
-        # ----------------------------------------------------
         # Roman Hindi / Hinglish
-        # ----------------------------------------------------
-
         (
             r"\bmujhe\s+(.+?)\s+mein\s+interest\s+hai\b",
             "interest",
@@ -885,17 +1062,14 @@ def extract_interests(
         ),
 
         (
-            r"\bmain\s+(.+?)\s+mein\s+interested\s+hoon\b",
+            r"\bmain\s+(.+?)\s+mein\s+interested\s+"
+            r"(?:hoon|hun)\b",
             "interested",
         ),
 
         (
-            r"\bmujhe\s+(.+?)\s+ke\s+kaam\s+mein\s+interest\s+hai\b",
-            "interest",
-        ),
-
-        (
-            r"\bmain\s+(.+?)\s+mein\s+interest\s+rakhta\s+hoon\b",
+            r"\bmujhe\s+(.+?)\s+ke\s+kaam\s+mein\s+"
+            r"interest\s+hai\b",
             "interest",
         ),
 
@@ -914,10 +1088,7 @@ def extract_interests(
             "ruchi",
         ),
 
-        # ----------------------------------------------------
         # Pasand
-        # ----------------------------------------------------
-
         (
             r"\bmujhe\s+(.+?)\s+pasand\s+hai\b",
             "pasand",
@@ -934,19 +1105,12 @@ def extract_interests(
         ),
 
         (
-            r"\bmain\s+(.+?)\s+karna\s+pasand\s+karta\s+hoon\b",
+            r"\bmain\s+(.+?)\s+karna\s+pasand\s+"
+            r"(?:karta|karti)\s+(?:hoon|hun)\b",
             "pasand",
         ),
 
-        (
-            r"\bmain\s+(.+?)\s+karna\s+pasand\s+karti\s+hoon\b",
-            "pasand",
-        ),
-
-        # ----------------------------------------------------
         # English
-        # ----------------------------------------------------
-
         (
             r"\bi\s+am\s+interested\s+in\s+([^.!?;।\n]+)",
             "interested",
@@ -958,7 +1122,8 @@ def extract_interests(
         ),
 
         (
-            r"\bi\s+have\s+an?\s+interest\s+in\s+([^.!?;।\n]+)",
+            r"\bi\s+have\s+an?\s+interest\s+in\s+"
+            r"([^.!?;।\n]+)",
             "interest",
         ),
 
@@ -977,41 +1142,32 @@ def extract_interests(
             "enjoy",
         ),
 
-        # ----------------------------------------------------
-        # Devanagari Hindi
-        # ----------------------------------------------------
-
-        # मुझे सिलाई में दिलचस्पी है
+        # Devanagari
         (
             r"मुझे\s+(.+?)\s+में\s+दिलचस्पी\s+है",
             "interest",
         ),
 
-        # मुझे सिलाई में रुचि है
         (
             r"मुझे\s+(.+?)\s+में\s+रुचि\s+है",
             "ruchi",
         ),
 
-        # मुझे सिलाई पसंद है
         (
             r"मुझे\s+(.+?)\s+पसंद\s+है",
             "pasand",
         ),
 
-        # मुझे सिलाई करना पसंद है
         (
             r"मुझे\s+(.+?)\s+करना\s+पसंद\s+है",
             "pasand",
         ),
 
-        # मेरी रुचि सिलाई में है
         (
             r"मेरी\s+रुचि\s+(.+?)\s+में\s+है",
             "ruchi",
         ),
 
-        # मेरी दिलचस्पी सिलाई में है
         (
             r"मेरी\s+दिलचस्पी\s+(.+?)\s+में\s+है",
             "interest",
@@ -1038,24 +1194,16 @@ def extract_interests(
             if not raw_value:
                 continue
 
-            value = raw_value
-
-            # Remove trailing "kaam/work".
             value = re.sub(
                 r"\b(kaam|work)\s*$",
                 "",
-                value,
+                raw_value,
                 flags=re.IGNORECASE,
             ).strip()
-
-            value = value.strip(
-                " ,.;:!?।"
-            )
 
             if not value:
                 continue
 
-            # Reject unrelated fields.
             bad_terms = {
                 "naam",
                 "age",
@@ -1143,36 +1291,90 @@ def extract_aspirations(
 
     patterns = [
 
-        # Roman Hindi
-        r"\bfuture\s+mein\s+([^,.;!?।\n]+?)\s+chahta\s+hoon\b",
-        r"\bfuture\s+mein\s+([^,.;!?।\n]+?)\s+chahti\s+hoon\b",
-        r"\baage\s+main\s+([^,.;!?।\n]+?)\s+chahta\s+hoon\b",
-        r"\baage\s+main\s+([^,.;!?।\n]+?)\s+chahti\s+hoon\b",
-        r"\bmain\s+([^,.;!?।\n]+?)\s+karna\s+chahta\s+hoon\b",
-        r"\bmain\s+([^,.;!?।\n]+?)\s+karna\s+chahti\s+hoon\b",
+        # Roman Hindi / Hinglish
+        (
+            r"\bfuture\s+mein\s+([^,.;!?।\n]+?)\s+"
+            r"chahta\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\bfuture\s+mein\s+([^,.;!?।\n]+?)\s+"
+            r"chahti\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\baage\s+main\s+([^,.;!?।\n]+?)\s+"
+            r"chahta\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\baage\s+main\s+([^,.;!?।\n]+?)\s+"
+            r"chahti\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\bmain\s+([^,.;!?।\n]+?)\s+karna\s+"
+            r"chahta\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\bmain\s+([^,.;!?।\n]+?)\s+karna\s+"
+            r"chahti\s+(?:hoon|hun)\b"
+        ),
 
         # English
-        r"\bi\s+want\s+to\s+([^,.;!?।\n]+)",
-        r"\bi\s+want\s+to\s+start\s+([^,.;!?।\n]+)",
-        r"\bin\s+the\s+future\s+i\s+want\s+to\s+([^,.;!?।\n]+)",
+        (
+            r"\bi\s+want\s+to\s+([^,.;!?।\n]+)"
+        ),
 
-        # ----------------------------------------------------
+        (
+            r"\bin\s+the\s+future\s+i\s+want\s+to\s+"
+            r"([^,.;!?।\n]+)"
+        ),
+
         # Devanagari
-        # ----------------------------------------------------
+        (
+            r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहता\s+(?:हूँ|हूं)"
+        ),
 
-        # मैं भविष्य में अपना खुद का सिलाई का काम शुरू करना चाहता हूँ
-        r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+करना\s+चाहता\s+हूँ",
+        (
+            r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहती\s+(?:हूँ|हूं)"
+        ),
 
-        r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+करना\s+चाहती\s+हूँ",
+        (
+            r"मैं\s+आगे\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहता\s+(?:हूँ|हूं)"
+        ),
 
-        r"मैं\s+आगे\s+([^,.;!?।\n]+?)\s+करना\s+चाहता\s+हूँ",
+        (
+            r"मैं\s+आगे\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहती\s+(?:हूँ|हूं)"
+        ),
 
-        r"मैं\s+आगे\s+([^,.;!?।\n]+?)\s+करना\s+चाहती\s+हूँ",
+        # Devanagari "future"
+        (
+            r"फ्यूचर\s+में\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहता\s+(?:हूँ|हूं)"
+        ),
 
-        # चाहता हूँ without "करना"
-        r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+चाहता\s+हूँ",
+        (
+            r"फ्यूचर\s+में\s+([^,.;!?।\n]+?)\s+"
+            r"करना\s+चाहती\s+(?:हूँ|हूं)"
+        ),
 
-        r"मैं\s+भविष्य\s+में\s+([^,.;!?।\n]+?)\s+चाहती\s+हूँ",
+        # Natural spoken Hindi:
+        # मैं अपना खुद का सिलाई का काम शुरू करना चाहता हूं
+        (
+            r"मैं\s+([^,.;!?।\n]+?)\s+शुरू\s+करना\s+"
+            r"चाहता\s+(?:हूँ|हूं)"
+        ),
+
+        (
+            r"मैं\s+([^,.;!?।\n]+?)\s+शुरू\s+करना\s+"
+            r"चाहती\s+(?:हूँ|हूं)"
+        ),
     ]
 
     for pattern in patterns:
@@ -1183,19 +1385,21 @@ def extract_aspirations(
             flags=re.IGNORECASE,
         )
 
-        if match:
+        if not match:
+            continue
 
-            value = clean_extracted_phrase(
-                match.group(1)
-            )
+        value = clean_extracted_phrase(
+            match.group(1)
+        )
 
-            if value:
+        if not value:
+            continue
 
-                return (
-                    value,
-                    1.0,
-                    [match.group(0).strip()],
-                )
+        return (
+            value,
+            1.0,
+            [match.group(0).strip()],
+        )
 
     return None
 
@@ -1221,7 +1425,6 @@ def extract_employment_preference(
         r"\bself[- ]employment\b",
         r"\bapna\s+(?:khud\s+ka\s+)?business\b",
         r"\bapni\s+(?:khud\s+ki\s+)?shop\b",
-        r"\bapna\s+(?:bike|motorcycle|repair)\s+shop\b",
         r"\bown\s+business\b",
         r"\bown\s+shop\b",
 
@@ -1241,92 +1444,58 @@ def extract_employment_preference(
             flags=re.IGNORECASE,
         )
 
-        if match:
+        if not match:
+            continue
 
-            # ------------------------------------------------
-            # Use only the actual preference clause as evidence.
-            # Do NOT return an 80-character context window.
-            # ------------------------------------------------
+        segments = sentence_segments(
+            text
+        )
 
-            start = match.start()
-            end = match.end()
+        intent_words = [
+            "chahta",
+            "chahti",
+            "want",
+            "prefer",
+            "pasand",
+            "karna",
+            "start",
+            "shuru",
+            "future",
+            "अपना",
+            "खुद",
+            "स्वरोजगार",
+        ]
 
-            before = normalized[
-                max(0, start - 80):start
-            ]
+        for segment in segments:
 
-            after = normalized[
-                end:min(
-                    len(normalized),
-                    end + 80,
-                )
-            ]
-
-            context = (
-                before
-                + match.group(0)
-                + after
+            segment_normalized = normalize_for_match(
+                segment
             )
 
-            intent_patterns = [
+            if not re.search(
+                pattern,
+                segment_normalized,
+                flags=re.IGNORECASE,
+            ):
+                continue
 
-                "chahta",
-                "chahti",
-                "want",
-                "prefer",
-                "karna hai",
-                "start",
-                "shuru",
-                "future",
-                "apna",
-                "khud",
-                "स्वरोजगार",
-                "अपना",
-                "खुद",
-            ]
+            if not any(
+                word in segment_normalized
+                for word in intent_words
+            ):
+                continue
 
-            has_intent = any(
-                word in context
-                for word in intent_patterns
+            return (
+                "self-employment",
+                1.0,
+                [segment.strip()],
             )
 
-            if has_intent:
-
-                # Find the smallest useful sentence/clause.
-                segments = sentence_segments(
-                    text
-                )
-
-                for segment in segments:
-
-                    segment_normalized = normalize_for_match(
-                        segment
-                    )
-
-                    if (
-                        re.search(
-                            pattern,
-                            segment_normalized,
-                            flags=re.IGNORECASE,
-                        )
-                        and any(
-                            word in segment_normalized
-                            for word in intent_patterns
-                        )
-                    ):
-
-                        return (
-                            "self-employment",
-                            1.0,
-                            [segment.strip()],
-                        )
-
-                # Fallback: exact matched phrase.
-                return (
-                    "self-employment",
-                    1.0,
-                    [match.group(0).strip()],
-                )
+        return (
+            "self-employment",
+            1.0,
+            [match.group(0).strip()],
+        )
 
     # --------------------------------------------------------
     # Wage employment
@@ -1340,7 +1509,6 @@ def extract_employment_preference(
         r"\bprefer\s+(?:a\s+)?job\b",
         r"\bwage\s+employment\b",
 
-        # Devanagari
         r"नौकरी",
         r"वेतन\s+वाला\s+काम",
         r"वेतन\s+रोजगार",
@@ -1376,23 +1544,34 @@ def extract_location(
     patterns = [
 
         # Roman Hindi
-        r"\bmain\s+([^,.;!?।\n]+?)\s+mein\s+rehta\s+hoon\b",
-        r"\bmain\s+([^,.;!?।\n]+?)\s+mein\s+rehti\s+hoon\b",
-        r"\bmain\s+([^,.;!?।\n]+?)\s+mein\s+rahta\s+hoon\b",
+        (
+            r"\bmain\s+([^,.;!?।\n]+?)\s+mein\s+"
+            r"(?:rehta|rahta)\s+(?:hoon|hun)\b"
+        ),
+
+        (
+            r"\bmain\s+([^,.;!?।\n]+?)\s+mein\s+"
+            r"rehti\s+(?:hoon|hun)\b"
+        ),
 
         # English
-        r"\bi\s+live\s+in\s+([^,.;!?।\n]+)",
-        r"\bi\s+stay\s+in\s+([^,.;!?।\n]+)",
-        r"\bi\s+am\s+from\s+([^,.;!?।\n]+)",
+        (
+            r"\bi\s+live\s+in\s+([^,.;!?।\n]+)"
+        ),
+
+        (
+            r"\bi\s+stay\s+in\s+([^,.;!?।\n]+)"
+        ),
+
+        (
+            r"\bi\s+am\s+from\s+([^,.;!?।\n]+)"
+        ),
 
         # Devanagari
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहता\s+हूँ",
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहती\s+हूँ",
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहता\s+हूं",
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहती\s+हूं",
-
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहता\s+हूँ",
-        r"मैं\s+([^,.;!?।\n]+?)\s+में\s+रहता\s+हूं",
+        (
+            r"मैं\s+([^,.;!?।\n]+?)\s+में\s+"
+            r"(?:रहता|रहती)\s+(?:हूँ|हूं)"
+        ),
     ]
 
     for pattern in patterns:
@@ -1434,32 +1613,48 @@ def extract_language(
 
     explicit_patterns = [
 
-        # Roman / English
+        # English / Roman Hindi
         r"\bi\s+speak\s+([^.!?;।\n]+)",
         r"\bmeri\s+language\s+([^.!?;।\n]+)",
         r"\bmy\s+language\s+is\s+([^.!?;।\n]+)",
         r"\blanguage\s+is\s+([^.!?;।\n]+)",
-        r"\bmain\s+([^.!?;।\n]+?)\s+bolta\s+hoon",
-        r"\bmain\s+([^.!?;।\n]+?)\s+bolti\s+hoon",
-        r"\bmain\s+([^.!?;।\n]+?)\s+mein\s+baat\s+karta\s+hoon",
-        r"\bmain\s+([^.!?;।\n]+?)\s+mein\s+baat\s+karti\s+hoon",
-        r"\bmain\s+([^.!?;।\n]+?)\s+mein\s+baat\s+karna\s+prefer\s+karta\s+hoon",
-        r"\bmain\s+([^.!?;।\n]+?)\s+mein\s+baat\s+karna\s+prefer\s+karti\s+hoon",
+
+        r"\bmain\s+([^.!?;।\n]+?)\s+"
+        r"bolta\s+(?:hoon|hun)",
+
+        r"\bmain\s+([^.!?;।\n]+?)\s+"
+        r"bolti\s+(?:hoon|hun)",
+
+        r"\bmain\s+([^.!?;।\n]+?)\s+mein\s+"
+        r"baat\s+(?:karta|karti)\s+(?:hoon|hun)",
 
         # Devanagari
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलता\s+हूँ",
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलती\s+हूँ",
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलता\s+हूं",
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलती\s+हूं",
-        r"मैं\s+([^.!?;।\n]+?)\s+में\s+बात\s+करता\s+हूँ",
-        r"मैं\s+([^.!?;।\n]+?)\s+में\s+बात\s+करती\s+हूँ",
-        r"मैं\s+([^.!?;।\n]+?)\s+में\s+बात\s+करता\s+हूं",
-        r"मैं\s+([^.!?;।\n]+?)\s+में\s+बात\s+करती\s+हूं",
+        r"मैं\s+([^.!?;।\n]+?)\s+"
+        r"बोलता\s+(?:हूँ|हूं)",
 
-        # मैं हिंदी और अंग्रेज़ी बोलता हूँ
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलता\s+हूँ",
-        r"मैं\s+([^.!?;।\n]+?)\s+बोलती\s+हूँ",
+        r"मैं\s+([^.!?;।\n]+?)\s+"
+        r"बोलती\s+(?:हूँ|हूं)",
+
+        r"मैं\s+([^.!?;।\n]+?)\s+में\s+"
+        r"बात\s+(?:करता|करती)\s+(?:हूँ|हूं)",
     ]
+
+    devanagari_language_names = {
+        "हिंदी": "Hindi",
+        "अंग्रेज़ी": "English",
+        "अंग्रेजी": "English",
+        "मराठी": "Marathi",
+        "बंगाली": "Bengali",
+        "तमिल": "Tamil",
+        "तेलुगु": "Telugu",
+        "गुजराती": "Gujarati",
+        "पंजाबी": "Punjabi",
+        "कन्नड़": "Kannada",
+        "मलयालम": "Malayalam",
+        "ओड़िया": "Odia",
+        "उड़िया": "Odia",
+        "उर्दू": "Urdu",
+    }
 
     for pattern in explicit_patterns:
 
@@ -1485,28 +1680,13 @@ def extract_language(
                 flags=re.IGNORECASE,
             ):
 
-                found_languages.append(
-                    display_name
-                )
+                if display_name not in found_languages:
+
+                    found_languages.append(
+                        display_name
+                    )
 
         # Devanagari language names.
-        devanagari_language_names = {
-            "हिंदी": "Hindi",
-            "अंग्रेज़ी": "English",
-            "अंग्रेजी": "English",
-            "मराठी": "Marathi",
-            "बंगाली": "Bengali",
-            "तमिल": "Tamil",
-            "तेलुगु": "Telugu",
-            "गुजराती": "Gujarati",
-            "पंजाबी": "Punjabi",
-            "कन्नड़": "Kannada",
-            "मलयालम": "Malayalam",
-            "ओड़िया": "Odia",
-            "उड़िया": "Odia",
-            "उर्दू": "Urdu",
-        }
-
         for key, display_name in (
             devanagari_language_names.items()
         ):
@@ -1514,6 +1694,7 @@ def extract_language(
             if key in context:
 
                 if display_name not in found_languages:
+
                     found_languages.append(
                         display_name
                     )
@@ -1573,7 +1754,16 @@ def deterministic_extract(
         extractors.items()
     ):
 
-        result = extractor(text)
+        try:
+
+            result = extractor(
+                text
+            )
+
+        except Exception:
+            # One extractor should never crash
+            # the complete conversation engine.
+            continue
 
         if result is None:
             continue
@@ -1603,8 +1793,8 @@ FIELD_CONTEXT_PATTERNS = {
     ],
 
     "age": [
-        r"\bsaal\s+ka\s+hoon\b",
-        r"\bsaal\s+ki\s+hoon\b",
+        r"\bsaal\s+ka\s+(?:hoon|hun)\b",
+        r"\bsaal\s+ki\s+(?:hoon|hun)\b",
         r"\byears?\s+old\b",
         r"\bage\b",
         r"\bumar\b",
@@ -1633,7 +1823,7 @@ FIELD_CONTEXT_PATTERNS = {
 
     "current_occupation": [
         r"\bka\s+kaam\s+(?:karta|karti)\b",
-        r"\b(?:karta|karti)\s+hoon\b",
+        r"\b(?:karta|karti)\s+(?:hoon|hun)\b",
         r"\bwork\s+as\b",
         r"\bwork\s+in\b",
         r"\bworking\s+as\b",
@@ -1659,8 +1849,6 @@ FIELD_CONTEXT_PATTERNS = {
     ],
 
     "interests": [
-
-        # Roman Hindi
         r"\bmujhe\b.*\binterest\b",
         r"\bmujhe\b.*\binterested\b",
         r"\bmujhe\b.*\bpasand\b",
@@ -1670,7 +1858,6 @@ FIELD_CONTEXT_PATTERNS = {
         r"\bmain\b.*\binterest\b",
         r"\bmain\b.*\bpasand\b",
 
-        # English
         r"\bi\s+am\s+interested\s+in\b",
         r"\bi'm\s+interested\s+in\b",
         r"\bi\s+have\s+an?\s+interest\s+in\b",
@@ -1678,7 +1865,6 @@ FIELD_CONTEXT_PATTERNS = {
         r"\bi\s+like\b",
         r"\bi\s+enjoy\b",
 
-        # Devanagari
         r"रुचि",
         r"पसंद",
         r"दिलचस्पी",
@@ -1724,8 +1910,6 @@ FIELD_CONTEXT_PATTERNS = {
 
         r"में\s+रहता",
         r"में\s+रहती",
-        r"में\s+रहता\s+हूँ",
-        r"में\s+रहती\s+हूँ",
     ],
 
     "language": [
@@ -1884,6 +2068,32 @@ def value_supported_by_evidence(
 
             elif item_text not in evidence_text:
 
+                # Interest values may be canonicalized.
+                if field_name == "interests":
+
+                    normalized_interest = (
+                        normalize_interest_value(
+                            str(item)
+                        )
+                    )
+
+                    if normalized_interest == "tailoring":
+
+                        tailoring_terms = [
+                            "tailoring",
+                            "silai",
+                            "सिलाई",
+                            "बुनाई",
+                            "garment",
+                            "कपड़े",
+                        ]
+
+                        if any(
+                            term in evidence_text
+                            for term in tailoring_terms
+                        ):
+                            continue
+
                 return False
 
         return True
@@ -1892,7 +2102,7 @@ def value_supported_by_evidence(
         str(value)
     )
 
-    # Canonical employment value.
+    # Employment preference.
     if field_name == "employment_preference":
 
         if value_text == "self-employment":
@@ -1926,26 +2136,13 @@ def value_supported_by_evidence(
                 ]
             )
 
-    # Allow canonical interest normalization.
+    # Interest normalization.
     if field_name == "interests":
 
         normalized_value = normalize_interest_value(
             str(value)
         )
 
-        normalized_evidence = normalize_interest_value(
-            evidence_text
-        )
-
-        if (
-            normalized_value
-            and normalized_value
-            == normalized_evidence
-        ):
-            return True
-
-        # Tailoring can be represented by
-        # silai / garment / कपड़े etc.
         if normalized_value == "tailoring":
 
             tailoring_terms = [
@@ -1962,9 +2159,13 @@ def value_supported_by_evidence(
                 for term in tailoring_terms
             )
 
-        return value_text in evidence_text
+        return (
+            value_text in evidence_text
+        )
 
-    return value_text in evidence_text
+    return (
+        value_text in evidence_text
+    )
 
 
 def llm_context_supported(
@@ -2297,7 +2498,7 @@ Do NOT infer information.
 
 Do NOT use common sense to fill missing fields.
 
-Do NOT assume the user's language from the script.
+Do NOT assume information that is not explicitly stated.
 
 Every extracted field MUST have:
 - value
@@ -2372,56 +2573,120 @@ Return only the JSON extraction.
     # ========================================================
     # NEXT QUESTION
     # ========================================================
+
     QUESTION_MAP = {
 
-    # ========================================================
-    # PURE HINDI - DEVANAGARI
-    # ========================================================
-    "hindi": {
-        "name": "आपका नाम क्या है?",
-        "age": "आपकी उम्र कितनी है?",
-        "education": "आपने कितनी पढ़ाई की है?",
-        "current_occupation": "आप अभी क्या काम करते हैं?",
-        "skills": "आपको कौन-कौन से कौशल या काम आते हैं?",
-        "interests": "आपको किस तरह के काम में रुचि है?",
-        "aspirations": "आप भविष्य में क्या करना चाहते हैं?",
-        "employment_preference": "आप नौकरी करना चाहते हैं या अपना व्यवसाय?",
-        "location": "आप किस शहर या गाँव में रहते हैं?",
-        "language": "आप किस भाषा में बात करना पसंद करते हैं?",
-    },
+        # ====================================================
+        # PURE HINDI
+        # ====================================================
 
-    # ========================================================
-    # HINGLISH - ROMAN HINDI
-    # ========================================================
-    "hinglish": {
-        "name": "Aapka naam kya hai?",
-        "age": "Aapki age kitni hai?",
-        "education": "Aapne kitni padhai ki hai?",
-        "current_occupation": "Aap abhi kya kaam karte hain?",
-        "skills": "Aapko kaun-kaun se skills aati hain?",
-        "interests": "Aapko kis kaam mein interest hai?",
-        "aspirations": "Future mein aap kya karna chahte hain?",
-        "employment_preference": "Aap job karna chahte hain ya apna business?",
-        "location": "Aap kis city ya village mein rehte hain?",
-        "language": "Aap kis language mein baat karna prefer karte hain?",
-    },
+        "hindi": {
 
-    # ========================================================
-    # ENGLISH
-    # ========================================================
-    "english": {
-        "name": "What is your name?",
-        "age": "How old are you?",
-        "education": "What is your highest level of education?",
-        "current_occupation": "What work do you currently do?",
-        "skills": "What skills do you have?",
-        "interests": "What type of work are you interested in?",
-        "aspirations": "What do you want to do in the future?",
-        "employment_preference": "Do you prefer a job or self-employment?",
-        "location": "Where do you currently live?",
-        "language": "Which language do you prefer to speak?",
-    },
-}
+            "name":
+                "आपका नाम क्या है?",
+
+            "age":
+                "आपकी उम्र कितनी है?",
+
+            "education":
+                "आपने कितनी पढ़ाई की है?",
+
+            "current_occupation":
+                "आप अभी क्या काम करते हैं?",
+
+            "skills":
+                "आपको कौन-कौन से कौशल या काम आते हैं?",
+
+            "interests":
+                "आपको किस तरह के काम में रुचि है?",
+
+            "aspirations":
+                "आप भविष्य में क्या करना चाहते हैं?",
+
+            "employment_preference":
+                "आप नौकरी करना चाहते हैं या अपना व्यवसाय?",
+
+            "location":
+                "आप किस शहर या गाँव में रहते हैं?",
+
+            "language":
+                "आप किस भाषा में बात करना पसंद करते हैं?",
+        },
+
+        # ====================================================
+        # HINGLISH
+        # ====================================================
+
+        "hinglish": {
+
+            "name":
+                "Aapka naam kya hai?",
+
+            "age":
+                "Aapki age kitni hai?",
+
+            "education":
+                "Aapne kitni padhai ki hai?",
+
+            "current_occupation":
+                "Aap abhi kya kaam karte hain?",
+
+            "skills":
+                "Aapko kaun-kaun se skills aati hain?",
+
+            "interests":
+                "Aapko kis kaam mein interest hai?",
+
+            "aspirations":
+                "Future mein aap kya karna chahte hain?",
+
+            "employment_preference":
+                "Aap job karna chahte hain ya apna business?",
+
+            "location":
+                "Aap kis city ya village mein rehte hain?",
+
+            "language":
+                "Aap kis language mein baat karna prefer karte hain?",
+        },
+
+        # ====================================================
+        # ENGLISH
+        # ====================================================
+
+        "english": {
+
+            "name":
+                "What is your name?",
+
+            "age":
+                "How old are you?",
+
+            "education":
+                "What is your highest level of education?",
+
+            "current_occupation":
+                "What work do you currently do?",
+
+            "skills":
+                "What skills do you have?",
+
+            "interests":
+                "What type of work are you interested in?",
+
+            "aspirations":
+                "What do you want to do in the future?",
+
+            "employment_preference":
+                "Do you prefer a job or self-employment?",
+
+            "location":
+                "Where do you currently live?",
+
+            "language":
+                "Which language do you prefer to speak?",
+        },
+    }
 
     def next_question(
         self,
@@ -2454,22 +2719,21 @@ Return only the JSON extraction.
     # ========================================================
 
     def build_response(
-    self,
-    missing_fields: List[str],
+        self,
+        missing_fields: List[str],
     ) -> str:
 
-    # --------------------------------------------------------
-    # Some required information is still missing.
-    # Ask the next question in the detected language.
-    # --------------------------------------------------------
+        # ----------------------------------------------------
+        # Some required information is missing.
+        # ----------------------------------------------------
 
         if missing_fields:
+
             return self.next_question()
 
-    # --------------------------------------------------------
-    # All required information is available.
-    # Respond in the user's detected language.
-    # --------------------------------------------------------
+        # ----------------------------------------------------
+        # All required information is available.
+        # ----------------------------------------------------
 
         if self.response_language == "english":
 
@@ -2487,16 +2751,8 @@ Return only the JSON extraction.
                 "livelihood options find karta hoon."
             )
 
-    # Pure Hindi / Devanagari
-        if self.response_language == "hindi":
+        # Pure Hindi.
 
-            return (
-                "धन्यवाद। आपकी जानकारी पूरी हो गई है। "
-                "अब मैं आपके लिए उपयुक्त प्रशिक्षण और "
-                "आजीविका के विकल्प खोजूँगा।"
-            )
-
-    # Safe fallback
         return (
             "धन्यवाद। आपकी जानकारी पूरी हो गई है। "
             "अब मैं आपके लिए उपयुक्त प्रशिक्षण और "
@@ -2566,66 +2822,73 @@ Return only the JSON extraction.
             )
         )
 
-        for field_name, field_data in (
-            llm_fields.items()
+        if isinstance(
+            llm_fields,
+            dict,
         ):
 
-            if (
-                field_name
-                not in self.profile.model_fields
+            for field_name, field_data in (
+                llm_fields.items()
             ):
-                continue
 
-            if (
-                field_name
-                in accepted_fields
-            ):
-                continue
+                if (
+                    field_name
+                    not in self.profile.model_fields
+                ):
+                    continue
 
-            if not validate_llm_field(
-                field_name,
-                field_data,
-                user_message,
-            ):
-                continue
+                # Deterministic extractor already
+                # found this field.
+                if (
+                    field_name
+                    in accepted_fields
+                ):
+                    continue
 
-            value = clean_value(
-                field_data.get(
-                    "value"
+                if not validate_llm_field(
+                    field_name,
+                    field_data,
+                    user_message,
+                ):
+                    continue
+
+                value = clean_value(
+                    field_data.get(
+                        "value"
+                    )
                 )
-            )
 
-            if value is None:
-                continue
+                if value is None:
+                    continue
 
-            field = getattr(
-                self.profile,
-                field_name,
-            )
-
-            field.value = value
-
-            field.confidence = (
-                field_data.get(
-                    "confidence",
-                    0.8,
+                field = getattr(
+                    self.profile,
+                    field_name,
                 )
-            )
 
-            field.evidence = (
-                field_data.get(
-                    "evidence",
-                    [],
+                field.value = value
+
+                field.confidence = (
+                    field_data.get(
+                        "confidence",
+                        0.8,
+                    )
                 )
-            )
 
-            accepted_fields[
-                field_name
-            ] = {
-                "value": value,
-                "confidence": field.confidence,
-                "evidence": field.evidence,
-            }
+                field.evidence = (
+                    field_data.get(
+                        "evidence",
+                        [],
+                    )
+                )
+
+                accepted_fields[
+                    field_name
+                ] = {
+                    "value": value,
+                    "confidence": field.confidence,
+                    "evidence": field.evidence,
+                }
 
         # ----------------------------------------------------
         # 4. Determine missing fields.
@@ -2640,7 +2903,7 @@ Return only the JSON extraction.
         )
 
         # ----------------------------------------------------
-        # 5. Search knowledge ONLY when complete.
+        # 5. Knowledge search ONLY when complete.
         # ----------------------------------------------------
 
         if ready:
