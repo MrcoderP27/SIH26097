@@ -1288,8 +1288,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "Education appears compatible with "
-                "the listed eligibility."
+                "आपकी शिक्षा दी गई पात्रता के अनुरूप प्रतीत होती है।"
             )
 
         # -----------------------------------------------------
@@ -1392,7 +1391,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "यह अवसर लाभार्थी के कौशल से संबंधित है।"
+                "यह अवसर लाभार्थी की बताई गई कौशल से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1419,7 +1418,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "यह अवसर लाभार्थी के रुचियों से संबंधित है।"
+                "यह अवसर लाभार्थी की बताई गई रुचियों से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1491,7 +1490,7 @@ class RecommendationEngine:
                 )
 
                 reasons.append(
-                    "यह अवसर लाभार्थी के रोजगार प्राधार से संबंधित है।"
+                    "यह अवसर लाभार्थी की रोजगार प्राथमिकता के अनुरूप है।"
                 )
 
             else:
@@ -1521,9 +1520,7 @@ class RecommendationEngine:
                     )
 
                     reasons.append(
-                        "The opportunity is a general "
-                        "self-employment or livelihood "
-                        "support pathway."
+                        "यह अवसर स्वरोजगार या आजीविका सहायता के लिए एक सामान्य मार्ग है।"
                     )
 
         # -----------------------------------------------------

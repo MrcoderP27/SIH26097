@@ -4,321 +4,945 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sahayak Kiosk - Voice Copilot</title>
+
     <style>
-        body { font-family: sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .calc-box { background: #fff; width: 360px; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-        .display { background: #1e293b; color: #38bdf8; font-size: 13px; padding: 15px; border-radius: 8px; min-height: 80px; text-align: left; margin-bottom: 20px; overflow-y: auto; max-height: 140px; line-height: 1.4;}
-        .mic-btn { width: 80px; height: 80px; border-radius: 50%; background: #ef4444; border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(239,68,68,0.4); }
-        .mic-btn.listening { background: #22c55e; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1.1); } }
-        .status { font-size: 12px; color: #64748b; margin-top: 15px; }
-        .urgent-badge { background: #fee2e2; color: #dc2626; padding: 5px; border-radius: 4px; font-size: 11px; margin-top: 10px; display: none; font-weight: bold; }
+        body {
+            font-family: sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .calc-box {
+            background: #fff;
+            width: 360px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .display {
+            background: #1e293b;
+            color: #38bdf8;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 80px;
+            text-align: left;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 140px;
+            line-height: 1.4;
+        }
+
+        .mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(239,68,68,0.4);
+        }
+
+        .mic-btn.listening {
+            background: #22c55e;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        .status {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 15px;
+        }
+
+        .urgent-badge {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 10px;
+            display: none;
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
 
 <div class="calc-box">
-    <div style="font-weight: bold; margin-bottom: 10px; color: #334155;">GRAMIN SAHAYAK KIOSK</div>
-    <div class="display" id="output">Mic dabayein aur saaf bolen...</div>
-    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
-    <div class="status" id="statusText">Ready</div>
-    <div class="urgent-badge" id="urgentBadge">🚨 Emergency Alert Sent!</div>
+
+    <div style="font-weight: bold; margin-bottom: 10px; color: #334155;">
+        GRAMIN SAHAYAK KIOSK
+    </div>
+
+    <div class="display" id="output">
+        Mic dabayein aur saaf bolen...
+    </div>
+
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+        🎤
+    </button>
+
+    <div class="status" id="statusText">
+        Ready
+    </div>
+
+    <div class="urgent-badge" id="urgentBadge">
+        Emergency Alert Sent!
+    </div>
+
 </div>
 
+
 <script>
+
+    // =========================================================
+    // GLOBAL VARIABLES
+    // =========================================================
+
     let recognition;
     let isListening = false;
     let finalTranscript = '';
+
     const outputDiv = document.getElementById('output');
     const statusText = document.getElementById('statusText');
     const micBtn = document.getElementById('micBtn');
     const urgentBadge = document.getElementById('urgentBadge');
-    
-    const sessionId = 'session_' + Math.floor(Math.random() * 100000);
 
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.lang = 'hi-IN';
-        recognition.interimResults = true;
-        recognition.continuous = false; // false rakhein taaki sentence complete hote hi ruk jaye
+    const sessionId =
+        'session_' + Math.floor(Math.random() * 100000);
 
-        recognition.onstart = () => {
-            isListening = true;
-            finalTranscript = '';
-            micBtn.classList.add('listening');
-            statusText.innerText = 'Sun raha hoon... bolen';
-            outputDiv.innerText = 'Aap: (bolna shuru karein...)';
-        };
 
-        recognition.onresult = (event) => {
-            let interim = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                } else {
-                    interim += event.results[i][0].transcript;
-                }
-            }
-            outputDiv.innerText = `Aap: ${finalTranscript || interim}`;
-        };
+    // =========================================================
+    // HELPER FUNCTION
+    // =========================================================
 
-        recognition.onerror = (e) => {
-            statusText.innerText = 'Mic Error: ' + e.error;
-            stopMicUI();
-        };
+    function getLocalizedName(value) {
 
-        recognition.onend = () => {
-            stopMicUI();
-            if (finalTranscript.trim() !== '') {
-                sendToBackend(finalTranscript.trim());
-            } else {
-                outputDiv.innerText = 'Aawaz saaf nahi aayi, dubara koshish karein.';
-            }
-        };
-    } else {
-        alert('Speech recognition not supported.');
+        if (!value) {
+            return '';
+        }
+
+        if (typeof value === 'string') {
+            return value;
+        }
+
+        if (typeof value === 'object') {
+
+            return (
+                value.hi ||
+                value.hindi ||
+                value.en ||
+                value.english ||
+                Object.values(value)[0] ||
+                ''
+            );
+        }
+
+        return String(value);
     }
 
+
+    // =========================================================
+    // SPEECH RECOGNITION
+    // =========================================================
+
+    if (
+        'SpeechRecognition' in window ||
+        'webkitSpeechRecognition' in window
+    ) {
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        recognition = new SpeechRecognition();
+
+        recognition.lang = 'hi-IN';
+
+        recognition.interimResults = true;
+
+        // Same core procedure
+        recognition.continuous = false;
+
+
+        // =====================================================
+        // MICROPHONE START
+        // =====================================================
+
+        recognition.onstart = () => {
+
+            isListening = true;
+
+            finalTranscript = '';
+
+            micBtn.classList.add('listening');
+
+            statusText.innerText =
+                'Sun raha hoon... bolen';
+
+            outputDiv.innerText =
+                'Aap: (bolna shuru karein...)';
+        };
+
+
+        // =====================================================
+        // SPEECH RESULT
+        // =====================================================
+
+        recognition.onresult = (event) => {
+
+            let interim = '';
+
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                ++i
+            ) {
+
+                if (event.results[i].isFinal) {
+
+                    finalTranscript +=
+                        event.results[i][0].transcript;
+
+                } else {
+
+                    interim +=
+                        event.results[i][0].transcript;
+                }
+            }
+
+            outputDiv.innerText =
+                `Aap: ${finalTranscript || interim}`;
+        };
+
+
+        // =====================================================
+        // SPEECH ERROR
+        // =====================================================
+
+        recognition.onerror = (e) => {
+
+            statusText.innerText =
+                'Mic Error: ' + e.error;
+
+            stopMicUI();
+        };
+
+
+        // =====================================================
+        // SPEECH END
+        // =====================================================
+
+        recognition.onend = () => {
+
+            stopMicUI();
+
+            if (finalTranscript.trim() !== '') {
+
+                sendToBackend(
+                    finalTranscript.trim()
+                );
+
+            } else {
+
+                outputDiv.innerText =
+                    'Aawaz saaf nahi aayi, dubara koshish karein.';
+            }
+        };
+
+    } else {
+
+        alert(
+            'Speech recognition not supported.'
+        );
+    }
+
+
+    // =========================================================
+    // MICROPHONE TOGGLE
+    // =========================================================
+
     function toggleMic() {
-        if (!recognition) return;
+
+        if (!recognition) {
+            return;
+        }
+
         if (isListening) {
+
             recognition.stop();
+
         } else {
+
             urgentBadge.style.display = 'none';
+
             try {
+
                 recognition.start();
+
             } catch (err) {
+
                 console.error(err);
             }
         }
     }
 
+
+    // =========================================================
+    // STOP MICROPHONE UI
+    // =========================================================
+
     function stopMicUI() {
+
         isListening = false;
+
         micBtn.classList.remove('listening');
+
         statusText.innerText = 'Ready';
     }
 
+
+    // =========================================================
+    // SEND MESSAGE TO FASTAPI BACKEND
+    // =========================================================
+
     async function sendToBackend(text) {
-    statusText.innerText = 'Processing...';
-    outputDiv.innerText = `Aap: ${text}\n\nAI: Soch raha hoon...`;
 
-    console.log("STT TEXT SENT TO BACKEND:", text);
-    
-    try {
-        const res = await fetch('http://127.0.0.1:8000/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                session_id: sessionId,
-                message: text
-            })
-        });
-
-        const data = await res.json();
-
-        const replyMsg = data.assistant || data.next_question || "Jawab nahi mila";
-
-let displayText = `Aap: ${text}\n\nAI: ${replyMsg}`;
-
-const recommendations = data.recommendations;
-
-if (recommendations) {
-
-    const qualifications =
-        recommendations.qualification_matches || [];
-
-    const jobs =
-        recommendations.job_or_scheme_matches || [];
-
-    if (qualifications.length > 0 || jobs.length > 0) {
-
-        displayText += "\n\n📚 आपके लिए सुझाव:\n";
-
-        // =================================================
-        // QUALIFICATIONS / TRAINING
-        // =================================================
-
-        if (qualifications.length > 0) {
-
-            displayText +=
-                "\n🎓 प्रशिक्षण / Qualification:\n";
-
-            qualifications.forEach((item, index) => {
-
-                const record = item.record || {};
-
-                let name = record.title || record.name || "Training";
-
-                // title may be multilingual object:
-                // { "en": "...", "hi": "..." }
-
-                if (typeof name === "object") {
-                    name =
-                        name.hi ||
-                        name.en ||
-                        Object.values(name)[0] ||
-                        "Training";
-                }
-
-                displayText +=
-                    `${index + 1}. ${name}\n`;
-
-                if (item.reasons && item.reasons.length > 0) {
-
-                    displayText +=
-                        `   क्यों: ${item.reasons.join(" ")}\n`;
-                }
-
-                displayText +=
-                    `   Match Score: ${item.score}\n`;
-            });
-        }
-
-        // =================================================
-        // JOBS / SCHEMES / LIVELIHOOD
-        // =================================================
-
-        if (jobs.length > 0) {
-
-            displayText +=
-                "\n💼 Job / Scheme / Livelihood:\n";
-
-            jobs.forEach((item, index) => {
-
-                const record = item.record || {};
-
-                let name =
-                    record.job_title ||
-                    record.title ||
-                    record.name ||
-                    "Opportunity";
-
-                // job_title may also be multilingual
-
-                if (typeof name === "object") {
-                    name =
-                        name.hi ||
-                        name.en ||
-                        Object.values(name)[0] ||
-                        "Opportunity";
-                }
-
-                displayText +=
-                    `${index + 1}. ${name}\n`;
-
-                if (item.reasons && item.reasons.length > 0) {
-
-                    displayText +=
-                        `   क्यों: ${item.reasons.join(" ")}\n`;
-                }
-
-                displayText +=
-                    `   Match Score: ${item.score}\n`;
-            });
-        }
-    }
-}
-
-outputDiv.innerText = displayText;
-
-let recommendationSpeech = '';
-
-if (recommendations) {
-    const qualifications = recommendations.qualification_matches || [];
-    const jobs = recommendations.job_or_scheme_matches || [];
-
-    if (qualifications.length > 0) {
-        recommendationSpeech += 'आपके लिए सुझाए गए प्रशिक्षण हैं। ';
-
-        qualifications.forEach((item, index) => {
-            const record = item.record || item;
-
-            const name =
-                getLocalizedName(record.title) ||
-                getLocalizedName(record.name) ||
-                getLocalizedName(record.qualification) ||
-                'प्रशिक्षण विकल्प';
-
-            recommendationSpeech += `${index + 1}. ${name}. `;
-
-            if (item.reasons && item.reasons.length > 0) {
-                recommendationSpeech += `क्योंकि ${item.reasons.join(' और ')}. `;
-            }
-        });
-    }
-
-    if (jobs.length > 0) {
-        recommendationSpeech += 'आपके लिए सुझाए गए आजीविका विकल्प हैं। ';
-
-        jobs.forEach((item, index) => {
-            const record = item.record || item;
-
-            const name =
-                getLocalizedName(record.title) ||
-                getLocalizedName(record.name) ||
-                getLocalizedName(record.job_title) ||
-                getLocalizedName(record.scheme_name) ||
-                'आजीविका विकल्प';
-
-            recommendationSpeech += `${index + 1}. ${name}. `;
-
-            if (item.reasons && item.reasons.length > 0) {
-                recommendationSpeech += `क्योंकि ${item.reasons.join(' और ')}. `;
-            }
-        });
-    }
-}
-function getLocalizedName(value) {
-    if (!value) return '';
-
-    if (typeof value === 'string') {
-        return value;
-    }
-
-    if (typeof value === 'object') {
-        return (
-            value.hi ||
-            value.hindi ||
-            value.en ||
-            value.english ||
-            Object.values(value)[0] ||
-            ''
-        );
-    }
-
-    return String(value);
-}
-
-speakResponse(replyMsg + ' ' + recommendationSpeech);
-
-        if (data.urgent_flag) {
-            urgentBadge.style.display = 'block';
-        }
-
-        statusText.innerText = 'Done!';
-
-    } catch (err) {
-        console.error("Backend connection error:", err);
+        statusText.innerText =
+            'Processing...';
 
         outputDiv.innerText =
-            `Aap: ${text}\n\nAI: Server connection error!`;
+            `Aap: ${text}\n\nAI: Soch raha hoon...`;
 
-        statusText.innerText = 'Failed';
-    }
-}
+        console.log(
+            "STT TEXT SENT TO BACKEND:",
+            text
+        );
 
-    function speakResponse(text) {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'hi-IN';
-            window.speechSynthesis.speak(utterance);
+
+        try {
+
+            // =================================================
+            // BACKEND REQUEST
+            // =================================================
+
+            const res = await fetch(
+                'http://127.0.0.1:8000/chat',
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: text
+                    })
+                }
+            );
+
+
+            // =================================================
+            // CHECK HTTP ERROR
+            // =================================================
+
+            if (!res.ok) {
+
+                throw new Error(
+                    `Backend returned ${res.status}`
+                );
+            }
+
+
+            // =================================================
+            // GET JSON
+            // =================================================
+
+            const data = await res.json();
+
+
+            // =================================================
+            // AI RESPONSE
+            // =================================================
+
+            const replyMsg =
+                data.assistant ||
+                data.next_question ||
+                "Jawab nahi mila";
+
+
+            // =================================================
+            // INITIAL DISPLAY
+            // =================================================
+
+            let displayText =
+                `Aap: ${text}\n\nAI: ${replyMsg}`;
+
+
+            // =================================================
+            // RECOMMENDATIONS
+            // =================================================
+
+            const recommendations =
+                data.recommendations;
+
+
+            if (recommendations) {
+
+                // =================================================
+                // QUALIFICATIONS
+                // =================================================
+
+                const qualifications =
+                    recommendations.qualification_matches || [];
+
+
+                // =================================================
+                // JOBS / SCHEMES
+                // =================================================
+
+                const jobs =
+                    recommendations.job_or_scheme_matches || [];
+
+
+                // =================================================
+                // TRAINING DISPLAY
+                // =================================================
+
+                if (qualifications.length > 0) {
+
+                    displayText +=
+                        "\n\n आपके लिए प्रशिक्षण:\n";
+
+
+                    qualifications.forEach(
+                        (item, index) => {
+
+                            const record =
+                                item.record || item;
+
+
+                            const name =
+                                getLocalizedName(
+                                    record.title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.name
+                                ) ||
+
+                                getLocalizedName(
+                                    record.qualification
+                                ) ||
+
+                                "प्रशिक्षण विकल्प";
+
+
+                            displayText +=
+                                `\n${index + 1}. ${name}\n`;
+
+
+                            if (record.level) {
+
+                                displayText +=
+                                    `   • स्तर: ${record.level}\n`;
+                            }
+
+
+                            if (record.hours) {
+
+                                displayText +=
+                                    `   • अवधि: ${record.hours} घंटे\n`;
+                            }
+
+
+                            if (record.sector) {
+
+                                displayText +=
+                                    `   • क्षेत्र: ${record.sector}\n`;
+                            }
+
+
+                            if (record.eligibility) {
+
+                                displayText +=
+                                    `   • पात्रता: ${record.eligibility}\n`;
+                            }
+
+
+                            if (record.nqr_id) {
+
+                                displayText +=
+                                    `   • NQR ID: ${record.nqr_id}\n`;
+                            }
+
+
+                            // -------------------------------------
+                            // REASONS
+                            // -------------------------------------
+
+                            if (
+                                item.reasons &&
+                                item.reasons.length > 0
+                            ) {
+
+                                displayText +=
+                                    `   • क्यों सुझाया गया:\n`;
+
+
+                                item.reasons.forEach(
+                                    (reason) => {
+
+                                        displayText +=
+                                            `      - ${reason}\n`;
+                                    }
+                                );
+                            }
+
+
+                            if (
+                                item.score !== undefined &&
+                                item.score !== null
+                            ) {
+
+                                displayText +=
+                                    `   • Match Score: ${item.score}\n`;
+                            }
+                        }
+                    );
+                }
+
+
+                // =================================================
+                // JOB / SCHEME / LIVELIHOOD DISPLAY
+                // =================================================
+
+                if (jobs.length > 0) {
+
+                    displayText +=
+                        "\n आपके लिए योजना / आजीविका विकल्प:\n";
+
+
+                    jobs.forEach(
+                        (item, index) => {
+
+                            const record =
+                                item.record || item;
+
+
+                            const name =
+                                getLocalizedName(
+                                    record.job_title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.name
+                                ) ||
+
+                                getLocalizedName(
+                                    record.scheme_name
+                                ) ||
+
+                                "आजीविका विकल्प";
+
+
+                            displayText +=
+                                `\n${index + 1}. ${name}\n`;
+
+
+                            if (record.required_skill) {
+
+                                displayText +=
+                                    `   • आवश्यक कौशल: ${record.required_skill}\n`;
+                            }
+
+
+                            if (record.eligibility) {
+
+                                displayText +=
+                                    `   • पात्रता: ${record.eligibility}\n`;
+                            }
+
+
+                            if (record.target_beneficiary) {
+
+                                displayText +=
+                                    `   • लक्षित लाभार्थी: ${record.target_beneficiary}\n`;
+                            }
+
+
+                            if (record.support) {
+
+                                displayText +=
+                                    `   • सहायता: ${record.support}\n`;
+                            }
+
+
+                            if (record.description) {
+
+                                displayText +=
+                                    `   • विवरण: ${record.description}\n`;
+                            }
+
+
+                            if (record.objective) {
+
+                                displayText +=
+                                    `   • उद्देश्य: ${record.objective}\n`;
+                            }
+
+
+                            // -------------------------------------
+                            // REASONS
+                            // -------------------------------------
+
+                            if (
+                                item.reasons &&
+                                item.reasons.length > 0
+                            ) {
+
+                                displayText +=
+                                    `   • क्यों सुझाया गया:\n`;
+
+
+                                item.reasons.forEach(
+                                    (reason) => {
+
+                                        displayText +=
+                                            `      - ${reason}\n`;
+                                    }
+                                );
+                            }
+
+
+                            if (
+                                item.score !== undefined &&
+                                item.score !== null
+                            ) {
+
+                                displayText +=
+                                    `   • Match Score: ${item.score}\n`;
+                            }
+                        }
+                    );
+                }
+            }
+
+
+            // =================================================
+            // SHOW FINAL OUTPUT
+            // =================================================
+
+            outputDiv.innerText =
+                displayText;
+
+
+            // =================================================
+            // SPEECH OUTPUT
+            // =================================================
+
+            let recommendationSpeech = '';
+
+
+            if (recommendations) {
+
+                const qualifications =
+                    recommendations.qualification_matches || [];
+
+
+                const jobs =
+                    recommendations.job_or_scheme_matches || [];
+
+
+                // =================================================
+                // TRAINING SPEECH
+                // =================================================
+
+                if (qualifications.length > 0) {
+
+                    recommendationSpeech +=
+                        'आपके लिए प्रशिक्षण का सुझाव है। ';
+
+
+                    qualifications.forEach(
+                        (item, index) => {
+
+                            const record =
+                                item.record || item;
+
+
+                            const name =
+                                getLocalizedName(
+                                    record.title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.name
+                                ) ||
+
+                                getLocalizedName(
+                                    record.qualification
+                                ) ||
+
+                                'प्रशिक्षण विकल्प';
+
+
+                            recommendationSpeech +=
+                                `विकल्प ${index + 1}: ${name}. `;
+
+
+                            if (record.level) {
+
+                                recommendationSpeech +=
+                                    `स्तर ${record.level}. `;
+                            }
+
+
+                            if (record.hours) {
+
+                                recommendationSpeech +=
+                                    `अवधि ${record.hours} घंटे. `;
+                            }
+
+
+                            if (record.sector) {
+
+                                recommendationSpeech +=
+                                    `क्षेत्र ${record.sector}. `;
+                            }
+
+
+                            if (record.eligibility) {
+
+                                recommendationSpeech +=
+                                    `पात्रता: ${record.eligibility}. `;
+                            }
+
+
+                            if (
+                                item.reasons &&
+                                item.reasons.length > 0
+                            ) {
+
+                                recommendationSpeech +=
+                                    'इस सुझाव के कारण हैं। ';
+
+
+                                item.reasons.forEach(
+                                    (reason, reasonIndex) => {
+
+                                        recommendationSpeech +=
+                                            `कारण ${reasonIndex + 1}: ${reason}. `;
+                                    }
+                                );
+                            }
+                        }
+                    );
+                }
+
+
+                // =================================================
+                // JOB / SCHEME SPEECH
+                // =================================================
+
+                if (jobs.length > 0) {
+
+                    recommendationSpeech +=
+                        'आपके लिए आजीविका या योजना का सुझाव है। ';
+
+
+                    jobs.forEach(
+                        (item, index) => {
+
+                            const record =
+                                item.record || item;
+
+
+                            const name =
+                                getLocalizedName(
+                                    record.job_title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.title
+                                ) ||
+
+                                getLocalizedName(
+                                    record.name
+                                ) ||
+
+                                getLocalizedName(
+                                    record.scheme_name
+                                ) ||
+
+                                'आजीविका विकल्प';
+
+
+                            recommendationSpeech +=
+                                `विकल्प ${index + 1}: ${name}. `;
+
+
+                            if (record.required_skill) {
+
+                                recommendationSpeech +=
+                                    `आवश्यक कौशल: ${record.required_skill}. `;
+                            }
+
+
+                            if (record.eligibility) {
+
+                                recommendationSpeech +=
+                                    `पात्रता: ${record.eligibility}. `;
+                            }
+
+
+                            if (record.target_beneficiary) {
+
+                                recommendationSpeech +=
+                                    `लक्षित लाभार्थी: ${record.target_beneficiary}. `;
+                            }
+
+
+                            if (record.support) {
+
+                                recommendationSpeech +=
+                                    `सहायता: ${record.support}. `;
+                            }
+
+
+                            if (record.description) {
+
+                                recommendationSpeech +=
+                                    `विवरण: ${record.description}. `;
+                            }
+
+
+                            if (record.objective) {
+
+                                recommendationSpeech +=
+                                    `उद्देश्य: ${record.objective}. `;
+                            }
+
+
+                            if (
+                                item.reasons &&
+                                item.reasons.length > 0
+                            ) {
+
+                                recommendationSpeech +=
+                                    'इस सुझाव के कारण हैं। ';
+
+
+                                item.reasons.forEach(
+                                    (reason, reasonIndex) => {
+
+                                        recommendationSpeech +=
+                                            `कारण ${reasonIndex + 1}: ${reason}. `;
+                                    }
+                                );
+                            }
+                        }
+                    );
+                }
+            }
+
+
+            // =================================================
+            // SPEAK RESPONSE
+            // =================================================
+
+            speakResponse(
+                replyMsg + ' ' + recommendationSpeech
+            );
+
+
+            // =================================================
+            // URGENT FLAG
+            // =================================================
+
+            if (data.urgent_flag) {
+
+                urgentBadge.style.display =
+                    'block';
+            }
+
+
+            // =================================================
+            // DONE
+            // =================================================
+
+            statusText.innerText =
+                'Done!';
+
+
+        } catch (err) {
+
+            console.error(
+                "Backend connection error:",
+                err
+            );
+
+
+            outputDiv.innerText =
+                `Aap: ${text}\n\nAI: Server connection error!`;
+
+
+            statusText.innerText =
+                'Failed';
         }
     }
+
+
+    // =========================================================
+    // TEXT TO SPEECH
+    // =========================================================
+
+    function speakResponse(text) {
+
+        if ('speechSynthesis' in window) {
+
+            window.speechSynthesis.cancel();
+
+            const utterance =
+                new SpeechSynthesisUtterance(text);
+
+            utterance.lang =
+                'hi-IN';
+
+            window.speechSynthesis.speak(
+                utterance
+            );
+        }
+    }
+
 </script>
 
 </body>
