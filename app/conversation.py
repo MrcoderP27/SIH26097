@@ -437,115 +437,57 @@ def extract_education(
     text: str,
 ) -> Optional[Tuple[Any, float, List[str]]]:
 
-    patterns = [
+    # ---------------------------------------------------------
+    # Normalize common spacing variations
+    # ---------------------------------------------------------
 
-        # English
-        (
-            r"\b(\d{1,2})(?:st|nd|rd|th)\s+pass\b",
-            "numeric",
-        ),
+    text = text.strip()
 
-        (
-            r"\b(\d{1,2})(?:st|nd|rd|th)\s+till\b",
-            "numeric",
-        ),
+    # ---------------------------------------------------------
+    # Helper: convert numeric education level to ordinal
+    # ---------------------------------------------------------
 
-        (
-            r"\bstudied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
-            "numeric",
-        ),
+    def ordinal(number: int) -> str:
 
-        (
-            r"\bstudied\s+up\s+to\s+(\d{1,2})(?:st|nd|rd|th)\b",
-            "numeric",
-        ),
+        if number == 1:
+            return "1st"
 
-        (
-            r"\bclass\s+(\d{1,2})\b",
-            "class",
-        ),
+        if number == 2:
+            return "2nd"
 
-        (
-            r"\b(\d{1,2})(?:st|nd|rd|th)\s+class\b",
-            "numeric",
-        ),
+        if number == 3:
+            return "3rd"
 
-        # Hindi numeric
-        (
-            r"(\d{1,2})वीं\s+कक्षा",
-            "numeric_hindi",
-        ),
+        return f"{number}th"
 
-        (
-            r"(\d{1,2})वीं\s+तक",
-            "numeric_hindi",
-        ),
 
-        (
-            r"(\d{1,2})वीं\s+पास",
-            "numeric_hindi",
-        ),
+    # ---------------------------------------------------------
+    # 1. ENGLISH NUMERIC FORMS
+    # ---------------------------------------------------------
 
-        (
-            r"कक्षा\s*(\d{1,2})",
-            "numeric_hindi",
-        ),
+    numeric_patterns = [
 
-        # Hindi word forms
-        (
-            r"दसवीं\s+(?:कक्षा|तक|पास)",
-            "10th",
-        ),
+        r"\b(\d{1,2})\s*(?:st|nd|rd|th)\s+pass\b",
 
-        (
-            r"बारहवीं\s+(?:कक्षा|तक|पास)",
-            "12th",
-        ),
+        r"\b(\d{1,2})\s*(?:st|nd|rd|th)\s+till\b",
 
-        (
-            r"ग्यारहवीं\s+(?:कक्षा|तक|पास)",
-            "11th",
-        ),
+        r"\bstudied\s+till\s+(\d{1,2})\s*(?:st|nd|rd|th)\b",
 
-        (
-            r"आठवीं\s+(?:कक्षा|तक|पास)",
-            "8th",
-        ),
+        r"\bstudied\s+up\s+to\s+(\d{1,2})\s*(?:st|nd|rd|th)\b",
 
-        (
-            r"(?:पाँचवीं|पांचवीं)\s+(?:कक्षा|तक|पास)",
-            "5th",
-        ),
+        r"\bi\s+have\s+studied\s+till\s+(\d{1,2})\s*(?:st|nd|rd|th)\b",
 
-        # Common education sentences
-        (
-            r"दसवीं\s+(?:कक्षा\s+)?तक\s+पढ़ाई",
-            "10th",
-        ),
+        r"\bi\s+studied\s+till\s+(\d{1,2})\s*(?:st|nd|rd|th)\b",
 
-        (
-            r"बारहवीं\s+(?:कक्षा\s+)?तक\s+पढ़ाई",
-            "12th",
-        ),
+        r"\bi\s+have\s+studied\s+up\s+to\s+(\d{1,2})\s*(?:st|nd|rd|th)\b",
 
-        # English full sentences
-        (
-            r"\bi\s+have\s+studied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
-            "numeric",
-        ),
+        r"\bclass\s+(\d{1,2})\b",
 
-        (
-            r"\bi\s+studied\s+till\s+(\d{1,2})(?:st|nd|rd|th)\b",
-            "numeric",
-        ),
-
-        (
-            r"\bi\s+have\s+studied\s+up\s+to\s+(\d{1,2})(?:st|nd|rd|th)\b",
-            "numeric",
-        ),
+        r"\b(\d{1,2})\s*(?:st|nd|rd|th)\s+class\b",
     ]
 
-    for pattern, result_type in patterns:
+
+    for pattern in numeric_patterns:
 
         match = re.search(
             pattern,
@@ -556,50 +498,283 @@ def extract_education(
         if not match:
             continue
 
-        if result_type == "10th":
-            value = "10th"
+        try:
+            number = int(match.group(1))
+        except (ValueError, TypeError):
+            continue
 
-        elif result_type == "12th":
-            value = "12th"
-
-        elif result_type == "11th":
-            value = "11th"
-
-        elif result_type == "8th":
-            value = "8th"
-
-        elif result_type == "5th":
-            value = "5th"
-
-        elif result_type in {
-            "numeric",
-            "numeric_hindi",
-            "class",
-        }:
-
-            number = match.group(1)
-
-            try:
-                number = int(number)
-            except (ValueError, TypeError):
-                continue
-
-            if not 1 <= number <= 20:
-                continue
-
-            value = f"{number}th"
-
-        else:
+        if not 1 <= number <= 20:
             continue
 
         return (
-            value,
+            ordinal(number),
             1.0,
             [match.group(0).strip()],
         )
 
-    return None
 
+    # ---------------------------------------------------------
+    # 2. HINDI NUMERIC FORMS
+    #
+    # Examples:
+    # 5वीं
+    # 5वी
+    # 5 वीं
+    # 5 वी
+    # 7वीं
+    # 10वीं
+    # 12वीं
+    # ---------------------------------------------------------
+
+    hindi_numeric_patterns = [
+
+        r"\b(\d{1,2})\s*वीं\s*(?:कक्षा|तक|पास)?",
+
+        r"\b(\d{1,2})\s*वी\s*(?:कक्षा|तक|पास)?",
+
+        r"कक्षा\s*(\d{1,2})",
+
+        r"क्लास\s*(\d{1,2})",
+
+        r"(\d{1,2})\s*कक्षा",
+    ]
+
+
+    for pattern in hindi_numeric_patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            flags=re.IGNORECASE,
+        )
+
+        if not match:
+            continue
+
+        try:
+            number = int(match.group(1))
+        except (ValueError, TypeError):
+            continue
+
+        if not 1 <= number <= 20:
+            continue
+
+        return (
+            ordinal(number),
+            1.0,
+            [match.group(0).strip()],
+        )
+
+
+    # ---------------------------------------------------------
+    # 3. HINDI WORD FORMS
+    #
+    # IMPORTANT:
+    # Multiple spoken/spelling variations are accepted.
+    # ---------------------------------------------------------
+
+    hindi_education = {
+
+        # 5th
+        "5th": [
+            "पाँचवीं",
+            "पांचवीं",
+            "पाँचवी",
+            "पांचवी",
+            "पाँचवि",
+            "पांचवि",
+            "पाँच",
+            "पांच",
+        ],
+
+        # 7th
+        "7th": [
+            "सातवीं",
+            "सातवी",
+            "सातवि",
+            "सात",
+        ],
+
+        # 10th
+        "10th": [
+            "दसवीं",
+            "दसवी",
+            "दसवि",
+            "दस",
+        ],
+
+        # 12th
+        "12th": [
+            "बारहवीं",
+            "बारहवी",
+            "बारहवि",
+            "बारहवीं",
+            "बारहवी",
+            "बारह",
+        ],
+    }
+
+
+    # ---------------------------------------------------------
+    # 4. Context words
+    #
+    # We prefer education-related context so that:
+    #
+    # "मेरी उम्र 12 साल है"
+    #
+    # does NOT become 12th education.
+    # ---------------------------------------------------------
+
+    education_context_patterns = [
+        "कक्षा",
+        "क्लास",
+        "तक पढ़",
+        "तक पढ",
+        "तक पढ़",
+        "पढ़ाई",
+        "पढाई",
+        "पढ़ाई",
+        "पास",
+        "स्कूल",
+        "स्कूलिंग",
+        "पढ़ा",
+        "पढ़ी",
+        "पढा",
+        "पढी",
+        "पढ़ा",
+        "पढ़ी",
+        "शिक्षा",
+        "studied",
+        "study",
+        "class",
+        "school",
+        "pass",
+        "education",
+    ]
+
+
+    # ---------------------------------------------------------
+    # 5. Check Hindi word forms
+    # ---------------------------------------------------------
+
+    for result, variants in hindi_education.items():
+
+        for variant in variants:
+
+            # Escape the Hindi phrase so regex treats it literally
+            escaped_variant = re.escape(variant)
+
+            # -------------------------------------------------
+            # First: explicit education context
+            # -------------------------------------------------
+
+            context_pattern = (
+                rf"{escaped_variant}"
+                rf"\s*(?:कक्षा|तक|पास)"
+            )
+
+            match = re.search(
+                context_pattern,
+                text,
+                flags=re.IGNORECASE,
+            )
+
+            if match:
+
+                return (
+                    result,
+                    1.0,
+                    [match.group(0).strip()],
+                )
+
+
+            # -------------------------------------------------
+            # Reverse order:
+            #
+            # कक्षा दस
+            # क्लास बारह
+            # कक्षा पांच
+            # -------------------------------------------------
+
+            reverse_context_pattern = (
+                rf"(?:कक्षा|क्लास)\s*"
+                rf"{escaped_variant}"
+            )
+
+            match = re.search(
+                reverse_context_pattern,
+                text,
+                flags=re.IGNORECASE,
+            )
+
+            if match:
+
+                return (
+                    result,
+                    1.0,
+                    [match.group(0).strip()],
+                )
+
+
+    # ---------------------------------------------------------
+    # 6. Natural Hindi sentences
+    #
+    # Examples:
+    #
+    # मैंने दसवीं तक पढ़ाई की है
+    # मैं बारहवीं तक पढ़ा हूं
+    # पांचवी तक पढ़ा हूं
+    # सातवीं तक पढ़ी हूं
+    # ---------------------------------------------------------
+
+    natural_patterns = {
+
+        "5th": [
+            r"(?:मैंने|मैं)?\s*(?:पाँचवीं|पांचवीं|पाँचवी|पांचवी)\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+            r"(?:मैंने|मैं)?\s*(?:पाँच|पांच)\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+        ],
+
+        "7th": [
+            r"(?:मैंने|मैं)?\s*(?:सातवीं|सातवी)\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+            r"(?:मैंने|मैं)?\s*सात\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+        ],
+
+        "10th": [
+            r"(?:मैंने|मैं)?\s*(?:दसवीं|दसवी)\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+            r"(?:मैंने|मैं)?\s*दस\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+        ],
+
+        "12th": [
+            r"(?:मैंने|मैं)?\s*(?:बारहवीं|बारहवी)\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+            r"(?:मैंने|मैं)?\s*बारह\s*तक\s*(?:पढ़ाई|पढाई|पढ़ाई|पढ़|पढ|पढ़)",
+        ],
+    }
+
+
+    for result, patterns_list in natural_patterns.items():
+
+        for pattern in patterns_list:
+
+            match = re.search(
+                pattern,
+                text,
+                flags=re.IGNORECASE,
+            )
+
+            if match:
+
+                return (
+                    result,
+                    1.0,
+                    [match.group(0).strip()],
+                )
+
+
+    # ---------------------------------------------------------
+    # Nothing detected
+    # ---------------------------------------------------------
+
+    return None
 
 # ============================================================
 # EXPERIENCE
