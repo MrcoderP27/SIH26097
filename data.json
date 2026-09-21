@@ -1,0 +1,238 @@
+{
+  "jobs": [
+    {
+      "id": "scheme_01",
+      "job_title": { "en": "PMEGP - Self Employment / New Enterprise" },
+      "required_skill": "self-employment, non-farm, micro-enterprise, silai, tailor, business",
+      "target_beneficiary": "New entrepreneurs in non-farm micro-enterprises",
+      "support": "Government margin money subsidy routed through banks; project finance",
+      "job_description": "अगर आप अपना छोटा व्यवसाय शुरू करना चाहते हैं, तो PMEGP के तहत व्यवसाय शुरू करने के लिए बैंक से प्रोजेक्ट लोन और सरकारी सहायता मिल सकती है। इसका उपयोग सिलाई, टेलरिंग या दूसरे गैर-कृषि छोटे व्यवसाय शुरू करने में किया जा सकता है।"
+    },
+    {
+      "id": "scheme_02",
+      "job_title": { "en": "PMFME - Micro Food Processing Unit" },
+      "required_skill": "food processing, pickle, papad, bakery, sorting, grading",
+      "target_beneficiary": "Micro food-processing entrepreneurs",
+      "support": "35% credit-linked capital subsidy, maximum Rs 10 lakh per unit",
+      "job_description": "अगर आप अचार, पापड़, बेकरी या किसी अन्य खाद्य उत्पाद का छोटा व्यवसाय शुरू करना चाहते हैं, तो PMFME के तहत मशीन, उपकरण और व्यवसाय से जुड़ी पूंजीगत सहायता मिल सकती है। इससे आप अपना खाद्य प्रसंस्करण काम शुरू या बेहतर कर सकते हैं।"
+    },
+    {
+      "id": "scheme_03",
+      "job_title": { "en": "Data Entry Operator / IT Support (Local E-Mitra)" },
+      "required_skill": "data entry, basic computer, typing",
+      "target_beneficiary": "Rural youth 15-35 with basic digital skills",
+      "support": "Placement-oriented skill jobs",
+      "job_description": "अगर आपको कंप्यूटर चलाना, टाइपिंग और डेटा एंट्री आती है, तो Data Entry Operator या IT Support जैसे काम आपके लिए उपलब्ध हो सकते हैं। आपके कौशल और स्थानीय अवसर के अनुसार आपको ऐसे रोजगार से जोड़ा जा सकता है।"
+    },
+    {
+      "id": "scheme_04",
+      "job_title": { "en": "DAY-NRLM - Sustainable Farm/Non-Farm Livelihoods & SHG Support" },
+      "required_skill": "SHG, community enterprise, value-chain, rural livelihood",
+      "target_beneficiary": "Rural poor households / SHGs and federations",
+      "support": "Skill-based farm/non-farm livelihoods, entrepreneurship, market support",
+      "job_description": "अगर आप SHG या ग्रामीण समूह के साथ मिलकर कमाई का काम करना चाहते हैं, तो DAY-NRLM के तहत कृषि और गैर-कृषि आजीविका, कौशल विकास और व्यवसाय से जुड़ी सहायता मिल सकती है। इससे आपको अपने काम को शुरू करने, बढ़ाने और बाजार से जुड़ने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_05",
+      "job_title": { "en": "SVEP (under DAY-NRLM) - Early-Stage Rural Enterprise" },
+      "required_skill": "enterprise idea, rural business, shop, local trade",
+      "target_beneficiary": "Rural enterprise seekers and SHG ecosystem",
+      "support": "Enterprise promotion/support with IT-based workflow, mentor/community support, finance",
+      "job_description": "अगर आपके पास दुकान, स्थानीय व्यापार या किसी छोटे व्यवसाय का विचार है, तो SVEP के तहत उसे शुरू करने के लिए मार्गदर्शन और जरूरी सहायता मिल सकती है। आपको व्यवसाय की योजना बनाने, प्रशिक्षण लेने और उपलब्ध वित्तीय या सामुदायिक सहायता से जुड़ने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_06",
+      "job_title": { "en": "DDU-GKY - Placement-Oriented Skill Training" },
+      "required_skill": "youth, entry-level, training, placement",
+      "target_beneficiary": "Rural youth 15-35 from poor families",
+      "support": "Skill training with assessment, certification, and placement tracking",
+      "job_description": "अगर आप ग्रामीण क्षेत्र के युवा हैं और नौकरी के लिए नया कौशल सीखना चाहते हैं, तो DDU-GKY के तहत रोजगार से जुड़ा कौशल प्रशिक्षण मिल सकता है। प्रशिक्षण के बाद आकलन, प्रमाणपत्र और उपलब्ध अवसरों के अनुसार प्लेसमेंट से जुड़ने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_07",
+      "job_title": { "en": "AIF (Agriculture Infrastructure Fund) - Post-Harvest Assets" },
+      "required_skill": "warehouse, cold storage, grading unit, sorting, FPO management",
+      "target_beneficiary": "PACS, FPO, SHG, farmers, agri-entrepreneurs",
+      "support": "Debt financing + 3% interest subvention up to Rs 2 crore + credit guarantee",
+      "job_description": "अगर आप गोदाम, कोल्ड स्टोरेज, सॉर्टिंग या ग्रेडिंग जैसी कृषि सुविधाएँ शुरू करना चाहते हैं, तो AIF के तहत वित्तीय सहायता की सुविधा मिल सकती है। इससे फसल को सुरक्षित रखने, उसकी गुणवत्ता बनाए रखने और बेहतर तरीके से बाजार तक पहुँचाने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_08",
+      "job_title": { "en": "PM-KUSUM - Solar Pump & Farm Energy Solarisation" },
+      "required_skill": "solar pump, drip irrigation, sprinkler, farm energy",
+      "target_beneficiary": "Farmers, groups, WUAs, coops, panchayats, FPOs, PACS",
+      "support": "Solar pumps, pump solarisation, decentralized solar generation up to 2 MW",
+      "job_description": "अगर आपको खेती के लिए सोलर पंप या सौर ऊर्जा की सुविधा चाहिए, तो PM-KUSUM के तहत सहायता मिल सकती है। इससे सिंचाई के लिए सोलर पंप लगाने या कृषि पंपों को सौर ऊर्जा से जोड़ने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_09",
+      "job_title": { "en": "PMKSY - Integrated Cold Chain & Value Addition" },
+      "required_skill": "cold chain, food transport, irradiation, processing centre",
+      "target_beneficiary": "Individuals, companies, partnerships, FPOs, coops, SHGs",
+      "support": "35%/50% eligible project cost subject to max Rs 10 crore",
+      "job_description": "अगर आप खाद्य उत्पादों के भंडारण, कोल्ड चेन, परिवहन या प्रोसेसिंग का काम करना चाहते हैं, तो PMKSY के तहत पात्र परियोजनाओं के लिए वित्तीय सहायता मिल सकती है। इससे खाद्य उत्पादों की बर्बादी कम करने, उन्हें सुरक्षित रखने और उनकी कीमत बढ़ाने में मदद मिल सकती है।"
+    },
+    {
+      "id": "scheme_10",
+      "job_title": { "en": "e-NAM - Electronic Agricultural Market Linkage" },
+      "required_skill": "mandi trading, price discovery, crop selling, agricultural commodity",
+      "target_beneficiary": "Farmers, traders, FPOs, APMCs",
+      "support": "Online trading, quality/price discovery, lot tracking",
+      "job_description": "अगर आप अपनी कृषि उपज को बाजार में बेचना चाहते हैं, तो e-NAM के माध्यम से ऑनलाइन कृषि बाजार से जुड़ सकते हैं। इससे फसल की कीमत की जानकारी देखने, खरीदारों तक पहुँचने और बिक्री की प्रक्रिया को डिजिटल तरीके से आगे बढ़ाने में मदद मिल सकती है।"
+    },
+    {
+      "id": "pmajay_01",
+      "job_title": { "en": "PM-AJAY - Skill Development & Income Generation (SC)" },
+      "required_skill": "sc community, skill development, income generation, artisan, livelihood",
+      "target_beneficiary": "Scheduled Caste (SC) individuals and households",
+      "support": "Grants-in-aid for skill development, income-generating schemes, and livelihood assets",
+      "job_description": "PM-AJAY - Skill Development and Income Generation: अगर आप कोई नया हुनर सीखकर कमाई शुरू करना चाहते हैं, तो इस अवसर के तहत आपको प्रशिक्षण और काम से जुड़ी जरूरी सहायता दी जा सकती है। प्रशिक्षण आपके क्षेत्र की जरूरत और उपलब्ध काम के अनुसार हो सकता है। इसका उद्देश्य आपको नया कौशल सीखने, रोजगार पाने या अपना छोटा काम शुरू करने में मदद करना है।"
+    },
+    {
+      "id": "pmajay_02",
+      "job_title": { "en": "PM-AJAY - GIA Income Generation Micro-Project Support" },
+      "required_skill": "sc community, micro enterprise, income generation, self help grant",
+      "target_beneficiary": "SC micro-entrepreneurs and SHG members",
+      "support": "Grants-in-aid for income-generating micro-projects and equipment support",
+      "description_hi": "अगर आप अपना छोटा व्यवसाय या कमाई का कोई काम शुरू करना चाहते हैं, तो इस अवसर के तहत आपको जरूरी सामान, उपकरण या प्रशिक्षण की सहायता दी जा सकती है। इसका इस्तेमाल आप अपना काम शुरू करने या पहले से चल रहे काम को बेहतर बनाने के लिए कर सकते हैं। इससे आपको स्वरोजगार शुरू करने और अपनी आय बढ़ाने में मदद मिल सकती है।"
+    },
+    {
+      "id": "pmajay_03",
+      "job_title": { "en": "PM-AJAY - GIA Livelihood Enhancement & Common Facility" },
+      "required_skill": "sc community, common facility center, artisan cluster, value addition",
+      "target_beneficiary": "SC artisan clusters and producer groups",
+      "support": "Grants-in-aid for common work sheds, tools, and tech-driven market access",
+      "description_hi": "अगर आप कारीगरी, हस्तशिल्प या किसी समूह के साथ काम करते हैं, तो इस अवसर के तहत आपको बेहतर काम करने के लिए जगह, उपकरण, मशीन और प्रशिक्षण जैसी सुविधाएँ दी जा सकती हैं। इससे आपका काम आसान हो सकता है, सामान की गुणवत्ता बेहतर हो सकती है और बाजार तक पहुँच बनाने में मदद मिल सकती है।"
+    },
+    {
+      "id": "pmajay_04",
+      "job_title": { "en": "PM-AJAY - GIA Economic Development & District Project" },
+      "required_skill": "sc community, district project, economic development, poverty reduction",
+      "target_beneficiary": "SC population in high-gap blocks/districts",
+      "support": "Grants-in-aid for composite district economic development and asset creation",
+      "description_hi": "अगर आपके क्षेत्र में खेती, पशुपालन, खाद्य प्रसंस्करण या कोई दूसरा स्थानीय काम आपके लिए उपयुक्त है, तो ऐसी परियोजना के तहत आपको प्रशिक्षण और जरूरी संसाधनों की सहायता दी जा सकती है। यह आपके क्षेत्र की जरूरत और उपलब्ध अवसरों के अनुसार हो सकता है। इसका उद्देश्य आपके लिए रोजगार या आय का नया रास्ता बनाने में मदद करना है।"
+    }
+  ],
+  "qualifications": [
+    {
+      "id": "course_01",
+      "nqr_id": "9264",
+      "title": { "en": "PM Vishwakarma - Tailor (Darzi)" },
+      "level": "2.5",
+      "hours": "40",
+      "eligibility": "No Experience / Scheme-linked criteria",
+      "sector": "Apparel",
+      "course_description": "अगर आप सिलाई का काम सीखना या अपने मौजूदा सिलाई के काम को बेहतर बनाना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें कपड़े की नाप लेना, कपड़ा काटना, सिलाई और कपड़ों में बदलाव करना सिखाया जाता है। यह 40 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2.5 का प्रशिक्षण है। इसमें पहले के अनुभव की आवश्यकता नहीं है।"
+    },
+    {
+      "id": "course_02",
+      "nqr_id": "12602",
+      "title": { "en": "Basics of Papad, Pickles and Masala Powder Making" },
+      "level": "2",
+      "hours": "150",
+      "eligibility": "Ability to read/write; no experience",
+      "sector": "Food Industry",
+      "course_description": "अगर आप पापड़, अचार या मसाला बनाकर कमाई करना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें इन खाद्य पदार्थों को बनाने और उनसे जुड़ा छोटा व्यवसाय शुरू करने की बुनियादी जानकारी दी जाती है। यह 150 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2 का प्रशिक्षण है। इसमें पहले के अनुभव की आवश्यकता नहीं है।"
+    },
+    {
+      "id": "course_03",
+      "nqr_id": "14080",
+      "title": { "en": "Paddy Cultivator" },
+      "level": "3",
+      "hours": "270",
+      "eligibility": "10th completed / no experience",
+      "sector": "Agriculture",
+      "course_description": "अगर आप धान की खेती करना सीखना चाहते हैं, तो यह प्रशिक्षण खेती के जरूरी तरीकों को समझने में मदद करेगा। इसमें बीज तैयार करना, खेत की तैयारी, रोपाई, खाद, सिंचाई, कीट नियंत्रण और फसल की कटाई सिखाई जाती है। यह 270 घंटे का राष्ट्रीय कौशल योग्यता स्तर 3 का प्रशिक्षण है। 10वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_04",
+      "nqr_id": "12656",
+      "title": { "en": "Multi-skill Technician (Food Processing)" },
+      "level": "4",
+      "hours": "870",
+      "eligibility": "12th no experience / 2nd yr diploma / 10th+3y",
+      "sector": "Food Industry",
+      "course_description": "अगर आप खाद्य पदार्थों को तैयार करने और प्रसंस्करण के क्षेत्र में काम करना चाहते हैं, तो यह प्रशिक्षण कई जरूरी कौशल सिखाता है। इसमें फल-सब्जियों की छंटाई, सफाई, प्रसंस्करण, अचार, जैम, रस, बिस्कुट और मसाले बनाने जैसे काम शामिल हैं। यह 870 घंटे का राष्ट्रीय कौशल योग्यता स्तर 4 का प्रशिक्षण है। 12वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_05",
+      "nqr_id": "14904",
+      "title": { "en": "Fundamentals of Baking" },
+      "level": "4",
+      "hours": "60",
+      "eligibility": "12th no experience / 10th+3y",
+      "sector": "Food Industry",
+      "course_description": "अगर आप ब्रेड, केक और अन्य बेकरी उत्पाद बनाना सीखना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें बेकरी बनाने की जरूरी विधियों के साथ घर से छोटा बेकरी व्यवसाय शुरू करने की जानकारी दी जाती है। यह 60 घंटे का राष्ट्रीय कौशल योग्यता स्तर 4 का प्रशिक्षण है। 12वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_06",
+      "nqr_id": "12209",
+      "title": { "en": "Bread & Bakery Qualification" },
+      "level": "3",
+      "hours": "300",
+      "eligibility": "Verify current QF for exact rule set",
+      "sector": "Food Industry",
+      "course_description": "अगर आप ब्रेड और बेकरी के सामान बनाने का काम सीखना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें उत्पादन की तैयारी, बेकरी उत्पादों को भट्टी में तैयार करना और खाद्य सुरक्षा के तरीके सिखाए जाते हैं। यह 300 घंटे का राष्ट्रीय कौशल योग्यता स्तर 3 का प्रशिक्षण है। 10वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_07",
+      "nqr_id": "10754",
+      "title": { "en": "Micro-Irrigation Field Assistant" },
+      "level": "2",
+      "hours": "210",
+      "eligibility": "No formal education; no experience",
+      "sector": "Agriculture",
+      "course_description": "अगर आप खेतों में टपक सिंचाई या अन्य सूक्ष्म सिंचाई व्यवस्था लगाना और उसकी देखभाल करना सीखना चाहते हैं, तो यह प्रशिक्षण आपके लिए है। इसमें सिंचाई व्यवस्था लगाना, उसकी जाँच करना, मरम्मत और रखरखाव करना सिखाया जाता है। यह 210 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2 का प्रशिक्षण है। इसके लिए किसी औपचारिक शिक्षा या पहले के अनुभव की जरूरत नहीं है।"
+    },
+    {
+      "id": "course_08",
+      "nqr_id": "9936",
+      "title": { "en": "Service Assistant (Agriculture Machineries)" },
+      "level": "3",
+      "hours": "600",
+      "eligibility": "10th completed / no experience",
+      "sector": "Agriculture",
+      "course_description": "अगर आपको ट्रैक्टर और दूसरी कृषि मशीनों की मरम्मत और देखभाल में रुचि है, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें कृषि मशीनों की पहचान, खराबियों की जाँच, मरम्मत और सुरक्षित तरीके से काम करना सिखाया जाता है। यह 600 घंटे का राष्ट्रीय कौशल योग्यता स्तर 3 का प्रशिक्षण है। 10वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_09",
+      "nqr_id": "9937",
+      "title": { "en": "Vermi-Composter" },
+      "level": "3",
+      "hours": "360",
+      "eligibility": "10th / no experience",
+      "sector": "Agriculture",
+      "course_description": "अगर आप जैविक खाद बनाकर खेती या कमाई का काम करना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें केंचुओं का चयन, खाद की क्यारी तैयार करना, खाद बनाना, उसकी गुणवत्ता देखना और खेत में उपयोग करना सिखाया जाता है। यह 360 घंटे का राष्ट्रीय कौशल योग्यता स्तर 3 का प्रशिक्षण है। 10वीं पास उम्मीदवार बिना अनुभव के इसमें प्रवेश ले सकते हैं।"
+    },
+    {
+      "id": "course_10",
+      "nqr_id": "9301",
+      "title": { "en": "PM Vishwakarma - Potter (Kumhar) / Terracotta Maker" },
+      "level": "2.5",
+      "hours": "40",
+      "eligibility": "No Experience / Scheme verification",
+      "sector": "Handicrafts & Carpets",
+      "course_description": "अगर आप मिट्टी से बर्तन या टेराकोटा की वस्तुएँ बनाना सीखना या अपने काम को बेहतर करना चाहते हैं, तो यह प्रशिक्षण उपयोगी हो सकता है। इसमें आधुनिक औजारों के उपयोग, डिजिटल जानकारी, वित्तीय जानकारी, विपणन और स्वरोजगार से जुड़ी जानकारी दी जाती है। यह 40 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2.5 का प्रशिक्षण है। NQR रिकॉर्ड में पहले के अनुभव की आवश्यकता नहीं दी गई है।"
+    },
+    {
+      "id": "course_11",
+      "nqr_id": "9274",
+      "title": { "en": "PM Vishwakarma - Blacksmith (Lohar)" },
+      "level": "2.5",
+      "hours": "40",
+      "eligibility": "No Experience",
+      "sector": "Capital Goods & Manufacturing",
+      "course_description": "अगर आप लोहार का काम करते हैं और अपने काम को आधुनिक औजारों के साथ बेहतर करना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें आधुनिक औजारों के उपयोग के साथ डिजिटल जानकारी, वित्तीय जानकारी, विपणन और स्वरोजगार से जुड़ी जानकारी दी जाती है। यह 40 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2.5 का प्रशिक्षण है। इसमें पहले के अनुभव की आवश्यकता नहीं है।"
+    },
+    {
+      "id": "course_12",
+      "nqr_id": "9287",
+      "title": { "en": "PM Vishwakarmma - Plaster Mason (Basic)" },
+      "level": "2.5",
+      "hours": "40",
+      "eligibility": "Existing Vishwakarma duly verified as per scheme",
+      "sector": "Construction",
+      "course_description": "अगर आप दीवारों और छत पर प्लास्टर लगाने का काम सीखना या अपनी मौजूदा कुशलता को बेहतर करना चाहते हैं, तो यह प्रशिक्षण आपके लिए उपयोगी है। इसमें आधुनिक औजारों का उपयोग, प्लास्टर से जुड़े काम और अपना काम चलाने से जुड़ी जानकारी दी जाती है। यह 40 घंटे का राष्ट्रीय कौशल योग्यता स्तर 2.5 का प्रशिक्षण है। NQR के अनुसार पहले के अनुभव की आवश्यकता नहीं है।"
+    }
+  ]
+}
