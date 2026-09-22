@@ -1,138 +1,1194 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sahayak Kiosk - Voice Copilot</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            font-family: sans-serif;
-            background: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+  <title>ग्रामिन सहायक - AI वॉयेस कोपायलट</title>
 
-        .calc-box {
-            background: #fff;
-            width: 360px;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
-        }
+  <style>
 
-        .display {
-            background: #1e293b;
-            color: #38bdf8;
-            font-size: 13px;
-            padding: 15px;
-            border-radius: 8px;
-            min-height: 80px;
-            text-align: left;
-            margin-bottom: 20px;
-            overflow-y: auto;
-            max-height: 140px;
-            line-height: 1.4;
-        }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-        .mic-btn {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #ef4444;
-            border: none;
-            color: white;
-            font-size: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(239,68,68,0.4);
-        }
+    :root {
+      --bg-gradient: linear-gradient(
+        135deg,
+        #f3e7ff 0%,
+        #e6d4ff 50%,
+        #f7efff 100%
+      );
 
-        .mic-btn.listening {
-            background: #22c55e;
-            animation: pulse 1s infinite;
-        }
+      --glass-bg: rgba(255, 255, 255, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.85);
 
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
+      --glass-shadow:
+        0 16px 40px 0 rgba(107, 70, 193, 0.14),
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.95);
 
-            50% {
-                transform: scale(1.05);
-            }
+      --primary-purple: #6b46c1;
+      --secondary-purple: #7c3aed;
 
-            100% {
-                transform: scale(1.1);
-            }
-        }
+      --text-main: #2d2b37;
+      --text-muted: #6b687b;
+    }
 
-        .status {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 15px;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
 
-        .urgent-badge {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 11px;
-            margin-top: 10px;
-            display: none;
-            font-weight: bold;
-        }
-    </style>
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: var(--text-main);
+
+      overflow: hidden;
+
+      perspective: 1400px;
+    }
+
+
+    /* =========================================================
+       MAIN LAYOUT
+       ========================================================= */
+
+    .app-container {
+      display: flex;
+
+      width: 95vw;
+      max-width: 1200px;
+
+      height: 88vh;
+
+      gap: 24px;
+    }
+
+
+    /* =========================================================
+       LEFT SIDEBAR
+       ========================================================= */
+
+    .left-sidebar {
+      flex: 0 0 400px;
+
+      display: flex;
+      flex-direction: column;
+
+      gap: 16px;
+
+      height: 100%;
+    }
+
+
+    /* =========================================================
+       BRAND HEADER
+       ========================================================= */
+
+    .brand-header {
+      background: var(--glass-bg);
+
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+
+      border: 1px solid var(--glass-border);
+
+      border-radius: 20px;
+
+      padding: 18px 22px;
+
+      box-shadow: var(--glass-shadow);
+
+      display: flex;
+      align-items: center;
+
+      gap: 14px;
+
+      transform: translateZ(20px);
+
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+
+      border-radius: 14px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #a78bfa,
+          #7c3aed
+        );
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      box-shadow:
+        0 6px 16px rgba(124, 58, 237, 0.35);
+
+      font-size: 1.4rem;
+    }
+
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+
+      color: var(--text-main);
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+
+      color: var(--primary-purple);
+
+      font-weight: 600;
+    }
+
+
+    /* =========================================================
+       LEFT INFORMATION CARDS
+       ========================================================= */
+
+    .scrollable-cards-viewport {
+      flex: 1;
+
+      overflow: hidden;
+
+      position: relative;
+
+      border-radius: 24px;
+
+      mask-image:
+        linear-gradient(
+          to bottom,
+          transparent,
+          black 10%,
+          black 90%,
+          transparent
+        );
+
+      -webkit-mask-image:
+        linear-gradient(
+          to bottom,
+          transparent,
+          black 10%,
+          black 90%,
+          transparent
+        );
+    }
+
+    .scrollable-cards-track {
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 16px;
+
+      animation:
+        continuousLoopScroll 25s linear infinite;
+    }
+
+    .scrollable-cards-viewport:hover
+    .scrollable-cards-track {
+      animation-play-state: paused;
+    }
+
+    @keyframes continuousLoopScroll {
+
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(-50%);
+      }
+
+    }
+
+
+    /* =========================================================
+       GLASS INFORMATION CARD
+       ========================================================= */
+
+    .info-card {
+      background: var(--glass-bg);
+
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+
+      border: 1px solid var(--glass-border);
+
+      border-radius: 24px;
+
+      padding: 24px;
+
+      box-shadow: var(--glass-shadow);
+
+      transform-style: preserve-3d;
+
+      transition:
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.4s ease;
+    }
+
+    .info-card:hover {
+
+      transform:
+        translateY(-4px)
+        translateZ(15px)
+        rotateX(1.5deg);
+
+      box-shadow:
+        0 24px 48px 0 rgba(107, 70, 193, 0.22),
+        inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+    }
+
+    .info-card h3 {
+
+      font-size: 1.05rem;
+
+      font-weight: 700;
+
+      color: var(--primary-purple);
+
+      margin-bottom: 10px;
+    }
+
+    .info-card p,
+    .info-card li {
+
+      font-size: 0.9rem;
+
+      line-height: 1.6;
+
+      color: var(--text-muted);
+    }
+
+    .info-card ul {
+
+      list-style-type: disc;
+
+      padding-left: 18px;
+    }
+
+    .section-subhead {
+
+      font-size: 0.95rem;
+
+      font-weight: 700;
+
+      color: var(--secondary-purple);
+
+      margin-top: 16px;
+
+      margin-bottom: 8px;
+    }
+
+
+    /* =========================================================
+       RIGHT MAIN PANEL
+       ========================================================= */
+
+    .right-panel {
+
+      flex: 1;
+
+      background: var(--glass-bg);
+
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+
+      border: 1px solid var(--glass-border);
+
+      border-radius: 32px;
+
+      box-shadow: var(--glass-shadow);
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      justify-content: flex-start;
+
+      padding: 36px;
+
+      position: relative;
+
+      transform: translateZ(10px);
+
+      overflow: hidden;
+    }
+
+    .sarthi-main-title {
+
+      font-size: 1.8rem;
+
+      font-weight: 700;
+
+      color: var(--primary-purple);
+
+      text-align: center;
+    }
+
+    .sarthi-sub-title {
+
+      font-size: 0.85rem;
+
+      color: var(--text-muted);
+
+      margin-bottom: 18px;
+
+      font-weight: 500;
+    }
+
+
+    /* =========================================================
+       OLD OUTPUT AREA
+       
+       IMPORTANT:
+       This element replaces the old .display element.
+       The JavaScript still uses:
+       
+       const outputDiv = document.getElementById('output');
+       
+       Therefore backend/output functionality remains unchanged.
+       ========================================================= */
+
+    .input-box-mock {
+
+      width: 100%;
+
+      max-width: 620px;
+
+      background:
+        rgba(255, 255, 255, 0.7);
+
+      border:
+        1px solid rgba(255, 255, 255, 0.9);
+
+      border-radius: 20px;
+
+      padding: 18px 24px;
+
+      font-size: 0.95rem;
+
+      color: var(--text-muted);
+
+      box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.03);
+
+      text-align: center;
+
+      margin-bottom: 14px;
+
+      flex-shrink: 0;
+    }
+
+
+    /* =========================================================
+       ACTUAL OUTPUT WINDOW
+       ========================================================= */
+
+    .display {
+
+      width: 100%;
+
+      max-width: 620px;
+
+      background:
+        rgba(255, 255, 255, 0.78);
+
+      border:
+        1px solid rgba(255, 255, 255, 0.9);
+
+      border-radius: 18px;
+
+      padding: 15px 18px;
+
+      font-size: 13px;
+
+      color: var(--text-main);
+
+      min-height: 70px;
+
+      max-height: 180px;
+
+      overflow-y: auto;
+
+      text-align: left;
+
+      margin-bottom: 14px;
+
+      line-height: 1.5;
+
+      white-space: pre-wrap;
+
+      box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.03);
+
+      flex-shrink: 1;
+    }
+
+
+    /* =========================================================
+       ONLINE STATUS
+       ========================================================= */
+
+    .online-badge {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      background:
+        rgba(255, 255, 255, 0.85);
+
+      border:
+        1px solid rgba(255, 255, 255, 0.9);
+
+      padding: 6px 16px;
+
+      border-radius: 999px;
+
+      font-size: 0.8rem;
+
+      font-weight: 600;
+
+      color: var(--text-main);
+
+      margin-bottom: 12px;
+
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.04);
+
+      transition: all 0.3s ease;
+    }
+
+    .online-dot {
+
+      width: 8px;
+
+      height: 8px;
+
+      background-color: #9ca3af;
+
+      border-radius: 50%;
+
+      transition:
+        background-color 0.3s ease,
+        box-shadow 0.3s ease;
+    }
+
+    .online-badge.is-online
+    .online-dot {
+
+      background-color: #10b981;
+
+      box-shadow:
+        0 0 8px #10b981;
+    }
+
+    .online-badge.is-offline
+    .online-dot {
+
+      background-color: #ef4444;
+
+      box-shadow:
+        0 0 8px #ef4444;
+    }
+
+
+    /* =========================================================
+       3D MICROPHONE ORB
+       ========================================================= */
+
+    .mic-orb-container {
+
+      width: 180px;
+
+      height: 180px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      position: relative;
+
+      cursor: pointer;
+
+      transition:
+        transform 0.3s ease;
+
+      flex-shrink: 0;
+    }
+
+    .mic-orb-container:hover {
+
+      transform:
+        scale(1.05)
+        translateZ(20px);
+    }
+
+    .orb-ripple {
+
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(124, 58, 237, 0.15) 0%,
+          rgba(124, 58, 237, 0) 70%
+        );
+
+      animation:
+        pulseRipple 3s infinite ease-in-out;
+    }
+
+    .orb-ring {
+
+      position: absolute;
+
+      inset: 16px;
+
+      border-radius: 50%;
+
+      border:
+        1.5px dashed rgba(124, 58, 237, 0.3);
+
+      animation:
+        spinRing 20s linear infinite;
+    }
+
+    .orb-core {
+
+      width: 96px;
+
+      height: 96px;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          135deg,
+          #a78bfa 0%,
+          #7c3aed 100%
+        );
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      box-shadow:
+        0 12px 28px rgba(124, 58, 237, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.5);
+
+      font-size: 2rem;
+
+      color: #fff;
+    }
+
+
+    /* =========================================================
+       OLD MIC LISTENING STATE
+       
+       This preserves the old .mic-btn.listening concept
+       for the new orb.
+       ========================================================= */
+
+    .mic-orb-container.listening
+    .orb-core {
+
+      animation:
+        micPulse 1s infinite;
+    }
+
+    .mic-orb-container.listening
+    .orb-ripple {
+
+      animation:
+        pulseRipple 0.8s infinite ease-in-out;
+    }
+
+    @keyframes micPulse {
+
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.08);
+      }
+
+      100% {
+        transform: scale(1.1);
+      }
+
+    }
+
+
+    /* =========================================================
+       STATUS
+       ========================================================= */
+
+    .status-text {
+
+      margin-top: 8px;
+
+      font-size: 0.95rem;
+
+      font-weight: 600;
+
+      color: var(--primary-purple);
+
+      text-align: center;
+
+      min-height: 24px;
+    }
+
+
+    /* =========================================================
+       EMERGENCY / URGENT BADGE
+       
+       Old JavaScript still controls:
+       
+       urgentBadge.style.display = 'block';
+       ========================================================= */
+
+    .urgent-badge {
+
+      background:
+        #fee2e2;
+
+      color:
+        #dc2626;
+
+      padding:
+        6px 12px;
+
+      border-radius:
+        8px;
+
+      font-size:
+        11px;
+
+      margin-top:
+        8px;
+
+      display:
+        none;
+
+      font-weight:
+        bold;
+
+      flex-shrink:
+        0;
+    }
+
+
+    /* =========================================================
+       ANIMATIONS
+       ========================================================= */
+
+    @keyframes pulseRipple {
+
+      0%,
+      100% {
+
+        transform: scale(0.9);
+
+        opacity: 0.6;
+      }
+
+      50% {
+
+        transform: scale(1.15);
+
+        opacity: 1;
+      }
+
+    }
+
+    @keyframes spinRing {
+
+      0% {
+
+        transform: rotate(0deg);
+      }
+
+      100% {
+
+        transform: rotate(360deg);
+      }
+
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 900px) {
+
+      body {
+
+        overflow-y: auto;
+
+        align-items: flex-start;
+
+        padding: 20px 0;
+      }
+
+      .app-container {
+
+        flex-direction: column;
+
+        width: 94vw;
+
+        height: auto;
+
+        min-height: 95vh;
+      }
+
+      .left-sidebar {
+
+        flex: none;
+
+        width: 100%;
+
+        height: 300px;
+      }
+
+      .right-panel {
+
+        min-height: 650px;
+      }
+    }
+
+
+    @media (max-width: 600px) {
+
+      .app-container {
+
+        width: 96vw;
+      }
+
+      .left-sidebar {
+
+        display: none;
+      }
+
+      .right-panel {
+
+        padding: 24px 16px;
+
+        border-radius: 24px;
+      }
+
+      .display {
+
+        max-height: 220px;
+      }
+
+      .sarthi-main-title {
+
+        font-size: 1.5rem;
+      }
+    }
+
+  </style>
 </head>
+
 
 <body>
 
-<div class="calc-box">
 
-    <div style="font-weight: bold; margin-bottom: 10px; color: #334155;">
-        GRAMIN SAHAYAK
+  <!-- =========================================================
+       MAIN APPLICATION
+       ========================================================= -->
+
+  <div class="app-container">
+
+
+    <!-- =======================================================
+         LEFT SIDEBAR
+         ======================================================= -->
+
+    <div class="left-sidebar">
+
+
+      <!-- BRAND -->
+
+      <div class="brand-header">
+
+        <div class="brand-icon">
+          🎙️
+        </div>
+
+        <div>
+
+          <div class="brand-title">
+            ग्रामिन सहायक
+          </div>
+
+          <div class="brand-subtitle">
+            AI वॉयेस कोपायलट
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- INFORMATION CARDS -->
+
+      <div class="scrollable-cards-viewport">
+
+        <div class="scrollable-cards-track">
+
+
+          <!-- ORIGINAL SET -->
+
+          <div class="info-card">
+
+            <h3>
+              PM-AJAY क्या है?
+            </h3>
+
+            <p>
+              PM-AJAY (प्रधानमंत्री अनुसूचित जाति अभ्युदय योजना)
+              भारत सरकार की एक योजना है, जिसका उद्देश्य अनुसूचित
+              जाति (SC) समुदायों की सामाजिक और आर्थिक स्थिति में
+              सुधार करना है। इसके अंतर्गत रोजगार, कौशल विकास,
+              आजीविका के अवसर और आय बढ़ाने वाली गतिविधियों को
+              बढ़ावा दिया जाता.
+            </p>
+
+          </div>
+
+
+          <div class="info-card">
+
+            <h3>
+              योजना
+            </h3>
+
+            <ul>
+
+              <li>
+                1. अटल वायु अभ्युदय योजना (एवीवाईएवाई)
+              </li>
+
+              <li>
+                2. दवाओं की मांग में कमी के लिए राष्ट्रीय कार्य योजना
+              </li>
+
+              <li>
+                3. लक्षित क्षेत्रों में उच्च विद्यालयों में छात्रों
+                के लिए आवासीय शिक्षा योजना (श्रेष्टा)
+              </li>
+
+              <li>
+                4. शराब और मादक पदार्थ (नशीली दवाओं) के दुरुपयोग
+                की रोकथाम के क्षेत्र में उत्कृष्ट सेवाओं के लिए
+                राष्ट्रीय पुरस्कारों की योजना
+              </li>
+
+            </ul>
+
+
+            <div class="section-subhead">
+              शैक्षिक योजनाएं
+            </div>
+
+            <ul>
+
+              <li>
+                1. अनुसूचित जाति के छात्रों के लिए शीर्ष श्रेणी
+                की शिक्षा के लिए केंद्रीय क्षेत्र की छात्रवृत्ति
+              </li>
+
+              <li>
+                2. ओ. बी. सी. लड़कों और लड़कियों के लिए छात्रावासों
+                का निर्माण
+              </li>
+
+              <li>
+                3. डॉ. अम्बेडकर योजना ओ. बी. सी. और ई. बी. सी.
+                के लिए विदेशी अध्ययन
+              </li>
+
+              <li>
+                4. एनबीसीएफडीसी द्वारा प्रदान किए गए शैक्षिक ऋण
+              </li>
+
+            </ul>
+
+          </div>
+
+
+          <!-- DUPLICATE SET FOR LOOP -->
+
+          <div class="info-card">
+
+            <h3>
+              PM-AJAY क्या है?
+            </h3>
+
+            <p>
+              PM-AJAY (प्रधानमंत्री अनुसूचित जाति अभ्युदय योजना)
+              भारत सरकार की एक योजना है, जिसका उद्देश्य अनुसूचित
+              जाति (SC) समुदायों की सामाजिक और आर्थिक स्थिति में
+              सुधार करना है। इसके अंतर्गत रोजगार, कौशल विकास,
+              आजीविका के अवसर और आय बढ़ाने वाली गतिविधियों को
+              बढ़ावा दिया जाता.
+            </p>
+
+          </div>
+
+
+          <div class="info-card">
+
+            <h3>
+              योजना
+            </h3>
+
+            <ul>
+
+              <li>
+                1. अटल वायु अभ्युदय योजना (एवीवाईएवाई)
+              </li>
+
+              <li>
+                2. दवाओं की मांग में कमी के लिए राष्ट्रीय कार्य योजना
+              </li>
+
+              <li>
+                3. लक्षित क्षेत्रों में उच्च विद्यालयों में छात्रों
+                के लिए आवासीय शिक्षा योजना (श्रेष्टा)
+              </li>
+
+              <li>
+                4. शराब और मादक पदार्थ (नशीली दवाओं) के दुरुपयोग
+                की रोकथाम के क्षेत्र में उत्कृष्ट सेवाओं के लिए
+                राष्ट्रीय पुरस्कारों की योजना
+              </li>
+
+            </ul>
+
+
+            <div class="section-subhead">
+              शैक्षिक योजनाएं
+            </div>
+
+            <ul>
+
+              <li>
+                1. अनुसूचित जाति के छात्रों के लिए शीर्ष श्रेणी
+                की शिक्षा के लिए केंद्रीय क्षेत्र की छात्रवृत्ति
+              </li>
+
+              <li>
+                2. ओ. बी. सी. लड़कों और लड़कियों के लिए छात्रावासों
+                का निर्माण
+              </li>
+
+              <li>
+                3. डॉ. अम्बेडकर योजना ओ. बी. सी. और ई. बी. सी.
+                के लिए विदेशी अध्ययन
+              </li>
+
+              <li>
+                4. एनबीसीएफडीसी द्वारा प्रदान किए गए शैक्षिक ऋण
+              </li>
+
+            </ul>
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
 
-    <div class="display" id="output">
-        Mic dabayein aur saaf bolen...
-    </div>
 
-    <button class="mic-btn" id="micBtn" onclick="toggleMic()">
-        🎤
-    </button>
+    <!-- =======================================================
+         RIGHT MAIN PANEL
+         ======================================================= -->
 
-    <div class="status" id="statusText">
+    <div class="right-panel">
+
+
+      <h1 class="sarthi-main-title">
+        सारथी
+      </h1>
+
+
+      <p class="sarthi-sub-title">
+        ग्रामिन सहायक AI
+      </p>
+
+
+      <!-- NEW FRONTEND VISUAL INPUT AREA -->
+
+      <div class="input-box-mock">
+        माइक दबाएँ और साफ़ बोलें...
+      </div>
+
+
+      <!-- =====================================================
+           OLD OUTPUT ELEMENT
+
+           IMPORTANT ID = output
+
+           OLD JAVASCRIPT DEPENDS ON THIS ID.
+           ===================================================== -->
+
+      <div class="display" id="output">
+
+        माइक्रोफ़ोन दबाएँ और स्पष्ट बोलें...
+
+      </div>
+
+
+      <!-- =====================================================
+           BACKEND SERVER STATUS
+
+           This is only a frontend health indicator.
+           It does NOT modify the /chat integration.
+           ===================================================== -->
+
+      <div
+        class="online-badge is-offline"
+        id="serverBadge"
+      >
+
+        <span class="online-dot"></span>
+
+        <span id="serverBadgeText">
+          Offline
+        </span>
+
+      </div>
+
+
+      <!-- =====================================================
+           MICROPHONE
+
+           IMPORTANT:
+           onclick MUST remain toggleMic()
+
+           This connects directly to the old speech-recognition
+           functionality.
+           ===================================================== -->
+
+      <div
+        class="mic-orb-container"
+        id="micBtn"
+        onclick="toggleMic()"
+        role="button"
+        aria-label="Microphone"
+        tabindex="0"
+      >
+
+        <div class="orb-ripple"></div>
+
+        <div class="orb-ring"></div>
+
+        <div class="orb-core">
+          🎙️
+        </div>
+
+      </div>
+
+
+      <!-- OLD STATUS ELEMENT -->
+
+      <div
+        class="status-text"
+        id="statusText"
+      >
         Ready
-    </div>
+      </div>
 
-    <div class="urgent-badge" id="urgentBadge">
+
+      <!-- OLD URGENT BADGE -->
+
+      <div
+        class="urgent-badge"
+        id="urgentBadge"
+      >
         Emergency Alert Sent!
+      </div>
+
+
     </div>
 
-</div>
+  </div>
 
 
-<script>
+  <!-- =========================================================
+       JAVASCRIPT
+       
+       CORE LOGIC BELOW IS THE OLD FRONTEND LOGIC.
+       Backend contract has NOT been changed.
+       ========================================================= -->
+
+  <script>
+
 
     // =========================================================
     // GLOBAL VARIABLES
     // =========================================================
 
     let recognition;
+
     let isListening = false;
+
     let finalTranscript = '';
 
-    const outputDiv = document.getElementById('output');
-    const statusText = document.getElementById('statusText');
-    const micBtn = document.getElementById('micBtn');
-    const urgentBadge = document.getElementById('urgentBadge');
+
+    const outputDiv =
+      document.getElementById('output');
+
+
+    const statusText =
+      document.getElementById('statusText');
+
+
+    const micBtn =
+      document.getElementById('micBtn');
+
+
+    const urgentBadge =
+      document.getElementById('urgentBadge');
+
 
     const sessionId =
-        'session_' + Math.floor(Math.random() * 100000);
+      'session_' +
+      Math.floor(Math.random() * 100000);
 
 
     // =========================================================
@@ -141,27 +1197,32 @@
 
     function getLocalizedName(value) {
 
-        if (!value) {
-            return '';
-        }
+      if (!value) {
 
-        if (typeof value === 'string') {
-            return value;
-        }
+        return '';
+      }
 
-        if (typeof value === 'object') {
 
-            return (
-                value.hi ||
-                value.hindi ||
-                value.en ||
-                value.english ||
-                Object.values(value)[0] ||
-                ''
-            );
-        }
+      if (typeof value === 'string') {
 
-        return String(value);
+        return value;
+      }
+
+
+      if (typeof value === 'object') {
+
+        return (
+          value.hi ||
+          value.hindi ||
+          value.en ||
+          value.english ||
+          Object.values(value)[0] ||
+          ''
+        );
+      }
+
+
+      return String(value);
     }
 
 
@@ -170,114 +1231,142 @@
     // =========================================================
 
     if (
-        'SpeechRecognition' in window ||
-        'webkitSpeechRecognition' in window
+      'SpeechRecognition' in window ||
+      'webkitSpeechRecognition' in window
     ) {
 
-        const SpeechRecognition =
-            window.SpeechRecognition ||
-            window.webkitSpeechRecognition;
 
-        recognition = new SpeechRecognition();
-
-        recognition.lang = 'hi-IN';
-
-        recognition.interimResults = true;
-
-        // Same core procedure
-        recognition.continuous = false;
+      const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
 
-        // =====================================================
-        // MICROPHONE START
-        // =====================================================
-
-        recognition.onstart = () => {
-
-            isListening = true;
-
-            finalTranscript = '';
-
-            micBtn.classList.add('listening');
-
-            statusText.innerText =
-                'Sun raha hoon... bolen';
-
-            outputDiv.innerText =
-                'Aap: (bolna shuru karein...)';
-        };
+      recognition =
+        new SpeechRecognition();
 
 
-        // =====================================================
-        // SPEECH RESULT
-        // =====================================================
-
-        recognition.onresult = (event) => {
-
-            let interim = '';
-
-            for (
-                let i = event.resultIndex;
-                i < event.results.length;
-                ++i
-            ) {
-
-                if (event.results[i].isFinal) {
-
-                    finalTranscript +=
-                        event.results[i][0].transcript;
-
-                } else {
-
-                    interim +=
-                        event.results[i][0].transcript;
-                }
-            }
-
-            outputDiv.innerText =
-                `Aap: ${finalTranscript || interim}`;
-        };
+      recognition.lang =
+        'hi-IN';
 
 
-        // =====================================================
-        // SPEECH ERROR
-        // =====================================================
-
-        recognition.onerror = (e) => {
-
-            statusText.innerText =
-                'Mic Error: ' + e.error;
-
-            stopMicUI();
-        };
+      recognition.interimResults =
+        true;
 
 
-        // =====================================================
-        // SPEECH END
-        // =====================================================
+      recognition.continuous =
+        false;
 
-        recognition.onend = () => {
 
-            stopMicUI();
+      // =======================================================
+      // MICROPHONE START
+      // =======================================================
 
-            if (finalTranscript.trim() !== '') {
+      recognition.onstart = () => {
 
-                sendToBackend(
-                    finalTranscript.trim()
-                );
+        isListening = true;
 
-            } else {
+        finalTranscript = '';
 
-                outputDiv.innerText =
-                    'Aawaz saaf nahi aayi, dubara koshish karein.';
-            }
-        };
+
+        micBtn.classList.add(
+          'listening'
+        );
+
+
+        statusText.innerText =
+          'सुन रहा हूँ... बोलिए';
+
+
+        outputDiv.innerText =
+          'Aap: (बोलना शुरू करें...)';
+
+      };
+
+
+      // =======================================================
+      // SPEECH RESULT
+      // =======================================================
+
+      recognition.onresult = (event) => {
+
+        let interim = '';
+
+
+        for (
+          let i = event.resultIndex;
+          i < event.results.length;
+          ++i
+        ) {
+
+
+          if (
+            event.results[i].isFinal
+          ) {
+
+            finalTranscript +=
+              event.results[i][0].transcript;
+
+          } else {
+
+            interim +=
+              event.results[i][0].transcript;
+          }
+
+        }
+
+
+        outputDiv.innerText =
+          `Aap: ${finalTranscript || interim}`;
+
+      };
+
+
+      // =======================================================
+      // SPEECH ERROR
+      // =======================================================
+
+      recognition.onerror = (e) => {
+
+        statusText.innerText =
+          'Mic Error: ' + e.error;
+
+
+        stopMicUI();
+
+      };
+
+
+      // =======================================================
+      // SPEECH END
+      // =======================================================
+
+      recognition.onend = () => {
+
+        stopMicUI();
+
+
+        if (
+          finalTranscript.trim() !== ''
+        ) {
+
+          sendToBackend(
+            finalTranscript.trim()
+          );
+
+        } else {
+
+          outputDiv.innerText =
+            'Aawaz saaf nahi aayi, dubara koshish karein.';
+        }
+
+      };
+
 
     } else {
 
-        alert(
-            'Speech recognition not supported.'
-        );
+      alert(
+        'Speech recognition not supported.'
+      );
     }
 
 
@@ -287,27 +1376,35 @@
 
     function toggleMic() {
 
-        if (!recognition) {
-            return;
+
+      if (!recognition) {
+
+        return;
+      }
+
+
+      if (isListening) {
+
+        recognition.stop();
+
+      } else {
+
+
+        urgentBadge.style.display =
+          'none';
+
+
+        try {
+
+          recognition.start();
+
+        } catch (err) {
+
+          console.error(err);
         }
 
-        if (isListening) {
+      }
 
-            recognition.stop();
-
-        } else {
-
-            urgentBadge.style.display = 'none';
-
-            try {
-
-                recognition.start();
-
-            } catch (err) {
-
-                console.error(err);
-            }
-        }
     }
 
 
@@ -317,11 +1414,18 @@
 
     function stopMicUI() {
 
-        isListening = false;
 
-        micBtn.classList.remove('listening');
+      isListening = false;
 
-        statusText.innerText = 'Ready';
+
+      micBtn.classList.remove(
+        'listening'
+      );
+
+
+      statusText.innerText =
+        'Ready';
+
     }
 
 
@@ -331,593 +1435,656 @@
 
     async function sendToBackend(text) {
 
-        statusText.innerText =
-            'Processing...';
 
-        outputDiv.innerText =
-            `Aap: ${text}\n\nAI: Soch raha hoon...`;
+      statusText.innerText =
+        'प्रक्रिया जारी है...';
 
-        console.log(
-            "STT TEXT SENT TO BACKEND:",
-            text
+
+      outputDiv.innerText =
+        `Aap: ${text}\n\nAI: मैं सोच रहा हूँ...`;
+
+
+      console.log(
+        "STT TEXT SENT TO BACKEND:",
+        text
+      );
+
+
+      try {
+
+
+        // =====================================================
+        // BACKEND REQUEST
+        // =====================================================
+
+        const res = await fetch(
+          'http://127.0.0.1:8000/chat',
+          {
+
+            method: 'POST',
+
+            headers: {
+
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+
+              session_id:
+                sessionId,
+
+              message:
+                text
+            })
+
+          }
         );
 
 
-        try {
-
-            // =================================================
-            // BACKEND REQUEST
-            // =================================================
-
-            const res = await fetch(
-                'http://127.0.0.1:8000/chat',
-                {
-                    method: 'POST',
-
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        message: text
-                    })
-                }
-            );
-
-
-            // =================================================
-            // CHECK HTTP ERROR
-            // =================================================
-
-            if (!res.ok) {
-
-                throw new Error(
-                    `Backend returned ${res.status}`
-                );
-            }
-
-
-            // =================================================
-            // GET JSON
-            // =================================================
-
-            const data = await res.json();
-
-
-            // =================================================
-            // AI RESPONSE
-            // =================================================
-
-            const replyMsg =
-                data.assistant ||
-                data.next_question ||
-                "Jawab nahi mila";
-
-
-            // =================================================
-            // INITIAL DISPLAY
-            // =================================================
-
-            let displayText =
-                `Aap: ${text}\n\nAI: ${replyMsg}`;
-
-
-            // =================================================
-            // RECOMMENDATIONS
-            // =================================================
-
-            const recommendations =
-                data.recommendations;
-
-
-            if (recommendations) {
-
-                // =================================================
-                // QUALIFICATIONS
-                // =================================================
-
-                const qualifications =
-                    recommendations.qualification_matches || [];
-
-
-                // =================================================
-                // JOBS / SCHEMES
-                // =================================================
-
-                const jobs =
-                    recommendations.job_or_scheme_matches || [];
-
-
-                // =================================================
-                // TRAINING DISPLAY
-                // =================================================
-
-                if (qualifications.length > 0) {
-
-                    displayText +=
-                        "\n\n आपके लिए प्रशिक्षण:\n";
-
-
-                    qualifications.forEach(
-                        (item, index) => {
-
-                            const record =
-                                item.record || item;
-
-
-                            const name =
-                                getLocalizedName(
-                                    record.title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.name
-                                ) ||
-
-                                getLocalizedName(
-                                    record.qualification
-                                ) ||
-
-                                "प्रशिक्षण विकल्प";
-
-
-                            displayText +=
-                                `\n${index + 1}. ${name}\n`;
-
-
-                            if (record.level) {
-
-                                displayText +=
-                                    `   • स्तर: ${record.level}\n`;
-                            }
-
-
-                            if (record.hours) {
-
-                                displayText +=
-                                    `   • अवधि: ${record.hours} घंटे\n`;
-                            }
-
-
-                            if (record.sector) {
-
-                                displayText +=
-                                    `   • क्षेत्र: ${record.sector}\n`;
-                            }
-
-
-                            if (record.eligibility) {
-
-                                displayText +=
-                                    `   • पात्रता: ${record.eligibility}\n`;
-                            }
-
-
-                            if (record.nqr_id) {
-
-                                displayText +=
-                                    `   • NQR ID: ${record.nqr_id}\n`;
-                            }
-
-
-                            // -------------------------------------
-                            // REASONS
-                            // -------------------------------------
-
-                            if (
-                                item.reasons &&
-                                item.reasons.length > 0
-                            ) {
-
-                                displayText +=
-                                    `   • क्यों सुझाया गया:\n`;
-
-
-                                item.reasons.forEach(
-                                    (reason) => {
-
-                                        displayText +=
-                                            `      - ${reason}\n`;
-                                    }
-                                );
-                            }
-
-
-                            if (
-                                item.score !== undefined &&
-                                item.score !== null
-                            ) {
-
-                                displayText +=
-                                    `   • Match Score: ${item.score}\n`;
-                            }
-                        }
-                    );
-                }
-
-
-                // =================================================
-                // JOB / SCHEME / LIVELIHOOD DISPLAY
-                // =================================================
-
-                if (jobs.length > 0) {
-
-                    displayText +=
-                        "\n आपके लिए योजना / आजीविका विकल्प:\n";
-
-
-                    jobs.forEach(
-                        (item, index) => {
-
-                            const record =
-                                item.record || item;
-
-
-                            const name =
-                                getLocalizedName(
-                                    record.job_title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.name
-                                ) ||
-
-                                getLocalizedName(
-                                    record.scheme_name
-                                ) ||
-
-                                "आजीविका विकल्प";
-
-
-                            displayText +=
-                                `\n${index + 1}. ${name}\n`;
-
-
-                            if (record.required_skill) {
-
-                                displayText +=
-                                    `   • आवश्यक कौशल: ${record.required_skill}\n`;
-                            }
-
-
-                            if (record.eligibility) {
-
-                                displayText +=
-                                    `   • पात्रता: ${record.eligibility}\n`;
-                            }
-
-
-                            if (record.target_beneficiary) {
-
-                                displayText +=
-                                    `   • लक्षित लाभार्थी: ${record.target_beneficiary}\n`;
-                            }
-
-
-                            if (record.support) {
-
-                                displayText +=
-                                    `   • सहायता: ${record.support}\n`;
-                            }
-
-
-                            if (record.description) {
-
-                                displayText +=
-                                    `   • विवरण: ${record.description}\n`;
-                            }
-
-
-                            if (record.objective) {
-
-                                displayText +=
-                                    `   • उद्देश्य: ${record.objective}\n`;
-                            }
-
-
-                            // -------------------------------------
-                            // REASONS
-                            // -------------------------------------
-
-                            if (
-                                item.reasons &&
-                                item.reasons.length > 0
-                            ) {
-
-                                displayText +=
-                                    `   • क्यों सुझाया गया:\n`;
-
-
-                                item.reasons.forEach(
-                                    (reason) => {
-
-                                        displayText +=
-                                            `      - ${reason}\n`;
-                                    }
-                                );
-                            }
-
-
-                            if (
-                                item.score !== undefined &&
-                                item.score !== null
-                            ) {
-
-                                displayText +=
-                                    `   • Match Score: ${item.score}\n`;
-                            }
-                        }
-                    );
-                }
-            }
-
-
-            // =================================================
-            // SHOW FINAL OUTPUT
-            // =================================================
-
-            outputDiv.innerText =
-                displayText;
-
-
-            // =================================================
-            // SPEECH OUTPUT
-            // =================================================
-
-            let recommendationSpeech = '';
-
-
-            if (recommendations) {
-
-                const qualifications =
-                    recommendations.qualification_matches || [];
-
-
-                const jobs =
-                    recommendations.job_or_scheme_matches || [];
-
-
-                // =================================================
-                // TRAINING SPEECH
-                // =================================================
-
-                if (qualifications.length > 0) {
-
-                    recommendationSpeech +=
-                        'आपके लिए प्रशिक्षण का सुझाव है। ';
-
-
-                    qualifications.forEach(
-                        (item, index) => {
-
-                            const record =
-                                item.record || item;
-
-
-                            const name =
-                                getLocalizedName(
-                                    record.title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.name
-                                ) ||
-
-                                getLocalizedName(
-                                    record.qualification
-                                ) ||
-
-                                'प्रशिक्षण विकल्प';
-
-
-                            recommendationSpeech +=
-                                `विकल्प ${index + 1}: ${name}. `;
-
-
-                            if (record.level) {
-
-                                recommendationSpeech +=
-                                    `स्तर ${record.level}. `;
-                            }
-
-
-                            if (record.hours) {
-
-                                recommendationSpeech +=
-                                    `अवधि ${record.hours} घंटे. `;
-                            }
-
-
-                            if (record.sector) {
-
-                                recommendationSpeech +=
-                                    `क्षेत्र ${record.sector}. `;
-                            }
-
-
-                            if (record.eligibility) {
-
-                                recommendationSpeech +=
-                                    `पात्रता: ${record.eligibility}. `;
-                            }
-
-
-                            if (
-                                item.reasons &&
-                                item.reasons.length > 0
-                            ) {
-
-                                recommendationSpeech +=
-                                    'इस सुझाव के कारण हैं। ';
-
-
-                                item.reasons.forEach(
-                                    (reason, reasonIndex) => {
-
-                                        recommendationSpeech +=
-                                            `कारण ${reasonIndex + 1}: ${reason}. `;
-                                    }
-                                );
-                            }
-                        }
-                    );
-                }
-
-
-                // =================================================
-                // JOB / SCHEME SPEECH
-                // =================================================
-
-                if (jobs.length > 0) {
-
-                    recommendationSpeech +=
-                        'आपके लिए आजीविका या योजना का सुझाव है। ';
-
-
-                    jobs.forEach(
-                        (item, index) => {
-
-                            const record =
-                                item.record || item;
-
-
-                            const name =
-                                getLocalizedName(
-                                    record.job_title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.title
-                                ) ||
-
-                                getLocalizedName(
-                                    record.name
-                                ) ||
-
-                                getLocalizedName(
-                                    record.scheme_name
-                                ) ||
-
-                                'आजीविका विकल्प';
-
-
-                            recommendationSpeech +=
-                                `विकल्प ${index + 1}: ${name}. `;
-
-
-                            if (record.required_skill) {
-
-                                recommendationSpeech +=
-                                    `आवश्यक कौशल: ${record.required_skill}. `;
-                            }
-
-
-                            if (record.eligibility) {
-
-                                recommendationSpeech +=
-                                    `पात्रता: ${record.eligibility}. `;
-                            }
-
-
-                            if (record.target_beneficiary) {
-
-                                recommendationSpeech +=
-                                    `लक्षित लाभार्थी: ${record.target_beneficiary}. `;
-                            }
-
-
-                            if (record.support) {
-
-                                recommendationSpeech +=
-                                    `सहायता: ${record.support}. `;
-                            }
-
-
-                            if (record.description) {
-
-                                recommendationSpeech +=
-                                    `विवरण: ${record.description}. `;
-                            }
-
-
-                            if (record.objective) {
-
-                                recommendationSpeech +=
-                                    `उद्देश्य: ${record.objective}. `;
-                            }
-
-
-                            if (
-                                item.reasons &&
-                                item.reasons.length > 0
-                            ) {
-
-                                recommendationSpeech +=
-                                    'इस सुझाव के कारण हैं। ';
-
-
-                                item.reasons.forEach(
-                                    (reason, reasonIndex) => {
-
-                                        recommendationSpeech +=
-                                            `कारण ${reasonIndex + 1}: ${reason}. `;
-                                    }
-                                );
-                            }
-                        }
-                    );
-                }
-            }
-
-
-            // =================================================
-            // SPEAK RESPONSE
-            // =================================================
-
-            speakResponse(
-                replyMsg + ' ' + recommendationSpeech
-            );
-
-
-            // =================================================
-            // URGENT FLAG
-            // =================================================
-
-            if (data.urgent_flag) {
-
-                urgentBadge.style.display =
-                    'block';
-            }
-
-
-            // =================================================
-            // DONE
-            // =================================================
-
-            statusText.innerText =
-                'Done!';
-
-
-        } catch (err) {
-
-            console.error(
-                "Backend connection error:",
-                err
-            );
-
-
-            outputDiv.innerText =
-                `Aap: ${text}\n\nAI: Server connection error!`;
-
-
-            statusText.innerText =
-                'Failed';
+        // =====================================================
+        // CHECK HTTP ERROR
+        // =====================================================
+
+        if (!res.ok) {
+
+          throw new Error(
+            `Backend returned ${res.status}`
+          );
         }
+
+
+        // =====================================================
+        // GET JSON
+        // =====================================================
+
+        const data =
+          await res.json();
+
+
+        // =====================================================
+        // AI RESPONSE
+        // =====================================================
+
+        const replyMsg =
+          data.assistant ||
+          data.next_question ||
+          "Jawab nahi mila";
+
+
+        // =====================================================
+        // INITIAL DISPLAY
+        // =====================================================
+
+        let displayText =
+          `Aap: ${text}\n\nAI: ${replyMsg}`;
+
+
+        // =====================================================
+        // RECOMMENDATIONS
+        // =====================================================
+
+        const recommendations =
+          data.recommendations;
+
+
+        if (recommendations) {
+
+
+          // ===================================================
+          // QUALIFICATIONS
+          // ===================================================
+
+          const qualifications =
+            recommendations
+              .qualification_matches || [];
+
+
+          // ===================================================
+          // JOBS / SCHEMES
+          // ===================================================
+
+          const jobs =
+            recommendations
+              .job_or_scheme_matches || [];
+
+
+          // ===================================================
+          // TRAINING DISPLAY
+          // ===================================================
+
+          if (
+            qualifications.length > 0
+          ) {
+
+            displayText +=
+              "\n\n आपके लिए प्रशिक्षण:\n";
+
+
+            qualifications.forEach(
+              (item, index) => {
+
+
+                const record =
+                  item.record || item;
+
+
+                const name =
+                  getLocalizedName(
+                    record.title
+                  ) ||
+
+                  getLocalizedName(
+                    record.name
+                  ) ||
+
+                  getLocalizedName(
+                    record.qualification
+                  ) ||
+
+                  "प्रशिक्षण विकल्प";
+
+
+                displayText +=
+                  `\n${index + 1}. ${name}\n`;
+
+
+                if (record.level) {
+
+                  displayText +=
+                    `   • स्तर: ${record.level}\n`;
+                }
+
+
+                if (record.hours) {
+
+                  displayText +=
+                    `   • अवधि: ${record.hours} घंटे\n`;
+                }
+
+
+                if (record.sector) {
+
+                  displayText +=
+                    `   • क्षेत्र: ${record.sector}\n`;
+                }
+
+
+                if (record.eligibility) {
+
+                  displayText +=
+                    `   • पात्रता: ${record.eligibility}\n`;
+                }
+
+
+                if (record.nqr_id) {
+
+                  displayText +=
+                    `   • NQR ID: ${record.nqr_id}\n`;
+                }
+
+
+                // =============================================
+                // DESCRIPTION
+                // =============================================
+
+                if (record.description) {
+
+                  displayText +=
+                    `   • विवरण: ${record.description}\n`;
+                }
+
+
+                // =============================================
+                // REASONS
+                // =============================================
+
+                if (
+                  item.reasons &&
+                  item.reasons.length > 0
+                ) {
+
+                  displayText +=
+                    `   • क्यों सुझाया गया:\n`;
+
+
+                  item.reasons.forEach(
+                    (reason) => {
+
+                      displayText +=
+                        `      - ${reason}\n`;
+                    }
+                  );
+                }
+
+
+                if (
+                  item.score !== undefined &&
+                  item.score !== null
+                ) {
+
+                  displayText +=
+                    `   • Match Score: ${item.score}\n`;
+                }
+
+              }
+            );
+
+          }
+
+
+          // ===================================================
+          // JOB / SCHEME / LIVELIHOOD DISPLAY
+          // ===================================================
+
+          if (
+            jobs.length > 0
+          ) {
+
+            displayText +=
+              "\n आपके लिए योजना / आजीविका विकल्प:\n";
+
+
+            jobs.forEach(
+              (item, index) => {
+
+
+                const record =
+                  item.record || item;
+
+
+                const name =
+                  getLocalizedName(
+                    record.job_title
+                  ) ||
+
+                  getLocalizedName(
+                    record.title
+                  ) ||
+
+                  getLocalizedName(
+                    record.name
+                  ) ||
+
+                  getLocalizedName(
+                    record.scheme_name
+                  ) ||
+
+                  "आजीविका विकल्प";
+
+
+                displayText +=
+                  `\n${index + 1}. ${name}\n`;
+
+
+                if (record.required_skill) {
+
+                  displayText +=
+                    `   • आवश्यक कौशल: ${record.required_skill}\n`;
+                }
+
+
+                if (record.eligibility) {
+
+                  displayText +=
+                    `   • पात्रता: ${record.eligibility}\n`;
+                }
+
+
+                if (record.target_beneficiary) {
+
+                  displayText +=
+                    `   • लक्षित लाभार्थी: ${record.target_beneficiary}\n`;
+                }
+
+
+                if (record.support) {
+
+                  displayText +=
+                    `   • सहायता: ${record.support}\n`;
+                }
+
+
+                if (record.description) {
+
+                  displayText +=
+                    `   • विवरण: ${record.description}\n`;
+                }
+
+
+                if (record.objective) {
+
+                  displayText +=
+                    `   • उद्देश्य: ${record.objective}\n`;
+                }
+
+
+                // =============================================
+                // REASONS
+                // =============================================
+
+                if (
+                  item.reasons &&
+                  item.reasons.length > 0
+                ) {
+
+                  displayText +=
+                    `   • क्यों सुझाया गया:\n`;
+
+
+                  item.reasons.forEach(
+                    (reason) => {
+
+                      displayText +=
+                        `      - ${reason}\n`;
+                    }
+                  );
+                }
+
+
+                if (
+                  item.score !== undefined &&
+                  item.score !== null
+                ) {
+
+                  displayText +=
+                    `   • Match Score: ${item.score}\n`;
+                }
+
+              }
+            );
+
+          }
+
+        }
+
+
+        // =====================================================
+        // SHOW FINAL OUTPUT
+        // =====================================================
+
+        outputDiv.innerText =
+          displayText;
+
+
+        // =====================================================
+        // SPEECH OUTPUT
+        // =====================================================
+
+        let recommendationSpeech =
+          '';
+
+
+        if (recommendations) {
+
+
+          const qualifications =
+            recommendations
+              .qualification_matches || [];
+
+
+          const jobs =
+            recommendations
+              .job_or_scheme_matches || [];
+
+
+          // ===================================================
+          // TRAINING SPEECH
+          // ===================================================
+
+          if (
+            qualifications.length > 0
+          ) {
+
+            recommendationSpeech +=
+              'आपके लिए प्रशिक्षण का सुझाव है। ';
+
+
+            qualifications.forEach(
+              (item, index) => {
+
+
+                const record =
+                  item.record || item;
+
+
+                const name =
+                  getLocalizedName(
+                    record.title
+                  ) ||
+
+                  getLocalizedName(
+                    record.name
+                  ) ||
+
+                  getLocalizedName(
+                    record.qualification
+                  ) ||
+
+                  'प्रशिक्षण विकल्प';
+
+
+                recommendationSpeech +=
+                  `विकल्प ${index + 1}: ${name}. `;
+
+
+                if (record.level) {
+
+                  recommendationSpeech +=
+                    `स्तर ${record.level}. `;
+                }
+
+
+                if (record.hours) {
+
+                  recommendationSpeech +=
+                    `अवधि ${record.hours} घंटे. `;
+                }
+
+
+                if (record.sector) {
+
+                  recommendationSpeech +=
+                    `क्षेत्र ${record.sector}. `;
+                }
+
+
+                if (record.eligibility) {
+
+                  recommendationSpeech +=
+                    `पात्रता: ${record.eligibility}. `;
+                }
+
+                if (record.description) {
+
+                    recommendationSpeech +=
+                        `विवरण: ${record.description}. `;
+                }
+
+
+                if (
+                  item.reasons &&
+                  item.reasons.length > 0
+                ) {
+
+                  recommendationSpeech +=
+                    'इस सुझाव के कारण हैं। ';
+
+
+                  item.reasons.forEach(
+                    (reason, reasonIndex) => {
+
+                      recommendationSpeech +=
+                        `कारण ${reasonIndex + 1}: ${reason}. `;
+                    }
+                  );
+                }
+
+              }
+            );
+
+          }
+
+
+          // ===================================================
+          // JOB / SCHEME SPEECH
+          // ===================================================
+
+          if (
+            jobs.length > 0
+          ) {
+
+            recommendationSpeech +=
+              'आपके लिए आजीविका या योजना का सुझाव है। ';
+
+
+            jobs.forEach(
+              (item, index) => {
+
+
+                const record =
+                  item.record || item;
+
+
+                const name =
+                  getLocalizedName(
+                    record.job_title
+                  ) ||
+
+                  getLocalizedName(
+                    record.title
+                  ) ||
+
+                  getLocalizedName(
+                    record.name
+                  ) ||
+
+                  getLocalizedName(
+                    record.scheme_name
+                  ) ||
+
+                  'आजीविका विकल्प';
+
+
+                recommendationSpeech +=
+                  `विकल्प ${index + 1}: ${name}. `;
+
+
+                if (record.required_skill) {
+
+                  recommendationSpeech +=
+                    `आवश्यक कौशल: ${record.required_skill}. `;
+                }
+
+
+                if (record.eligibility) {
+
+                  recommendationSpeech +=
+                    `पात्रता: ${record.eligibility}. `;
+                }
+
+
+                if (record.target_beneficiary) {
+
+                  recommendationSpeech +=
+                    `लक्षित लाभार्थी: ${record.target_beneficiary}. `;
+                }
+
+
+                if (record.support) {
+
+                  recommendationSpeech +=
+                    `सहायता: ${record.support}. `;
+                }
+
+
+                if (record.description) {
+
+                  recommendationSpeech +=
+                    `विवरण: ${record.description}. `;
+                }
+
+
+                if (record.objective) {
+
+                  recommendationSpeech +=
+                    `उद्देश्य: ${record.objective}. `;
+                }
+
+
+                if (
+                  item.reasons &&
+                  item.reasons.length > 0
+                ) {
+
+                  recommendationSpeech +=
+                    'इस सुझाव के कारण हैं। ';
+
+
+                  item.reasons.forEach(
+                    (reason, reasonIndex) => {
+
+                      recommendationSpeech +=
+                        `कारण ${reasonIndex + 1}: ${reason}. `;
+                    }
+                  );
+                }
+
+              }
+            );
+
+          }
+
+        }
+
+
+        // =====================================================
+        // SPEAK RESPONSE
+        // =====================================================
+
+        speakResponse(
+          replyMsg +
+          ' ' +
+          recommendationSpeech
+        );
+
+
+        // =====================================================
+        // URGENT FLAG
+        // =====================================================
+
+        if (data.urgent_flag) {
+
+          urgentBadge.style.display =
+            'block';
+        }
+
+
+        // =====================================================
+        // DONE
+        // =====================================================
+
+        statusText.innerText =
+          'कार्य पूरा हुआ';
+
+
+      } catch (err) {
+
+
+        console.error(
+          "Backend connection error:",
+          err
+        );
+
+
+        outputDiv.innerText =
+          `Aap: ${text}\n\nAI: सर्वर से कनेक्शन नहीं हो पाया।`;
+
+
+        statusText.innerText =
+          'त्रुटि हुई';
+      }
+
     }
 
 
@@ -927,23 +2094,129 @@
 
     function speakResponse(text) {
 
-        if ('speechSynthesis' in window) {
+    if ('speechSynthesis' in window) {
 
-            window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel();
 
-            const utterance =
-                new SpeechSynthesisUtterance(text);
+        const utterance =
+            new SpeechSynthesisUtterance(text);
 
-            utterance.lang =
-                'hi-IN';
+        utterance.lang =
+            'hi-IN';
 
-            window.speechSynthesis.speak(
-                utterance
-            );
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+
+        window.speechSynthesis.speak(
+            utterance
+        );
+    }
+}
+
+    // =========================================================
+    // NEW FRONTEND SERVER STATUS
+    //
+    // IMPORTANT:
+    // This does NOT replace or modify sendToBackend().
+    // It is only the visual Online/Offline indicator.
+    //
+    // We check the SAME FastAPI server used by /chat.
+    // =========================================================
+
+    const BACKEND_HEALTH_URL =
+      'http://127.0.0.1:8000/';
+
+
+    async function checkServerHealth() {
+
+
+      const badge =
+        document.getElementById(
+          'serverBadge'
+        );
+
+
+      const badgeText =
+        document.getElementById(
+          'serverBadgeText'
+        );
+
+
+      try {
+
+
+        const response =
+          await fetch(
+            BACKEND_HEALTH_URL,
+            {
+              method: 'GET',
+
+              signal:
+                AbortSignal.timeout(3000)
+            }
+          );
+
+
+        if (response.ok) {
+
+
+          badge.classList.remove(
+            'is-offline'
+          );
+
+
+          badge.classList.add(
+            'is-online'
+          );
+
+
+          badgeText.innerText =
+            'Online';
+
+
+        } else {
+
+          throw new Error(
+            'Server not OK'
+          );
         }
+
+
+      } catch (error) {
+
+
+        badge.classList.remove(
+          'is-online'
+        );
+
+
+        badge.classList.add(
+          'is-offline'
+        );
+
+
+        badgeText.innerText =
+          'Offline';
+      }
+
     }
 
-</script>
+
+    // =========================================================
+    // SERVER HEALTH CHECK
+    // =========================================================
+
+    checkServerHealth();
+
+
+    setInterval(
+      checkServerHealth,
+      5000
+    );
+
+
+  </script>
 
 </body>
 </html>
+
