@@ -1,3 +1,4 @@
+
 from typing import Any, Dict, List, Set
 
 from .data_store import data_store
@@ -23,21 +24,18 @@ class RecommendationEngine:
         Employment preference alone must NOT create a
         domain-specific recommendation.
 
-    Example:
-
-        "I want self-employment"
-
-    must NOT automatically recommend:
-
-        Food Processing
-        Agriculture
-        Solar Pump
-        Cold Storage
-
-    unless the beneficiary also has a relevant
-    occupation, skill, interest, or aspiration.
-
     Education alone must never create a recommendation.
+
+    IMPORTANT OUTPUT RULE:
+
+        Internal matching continues to use the complete
+        dataset.
+
+        User-facing recommendation records are converted
+        into Hindi-only output before being returned.
+
+        This does NOT change ranking, scoring, matching,
+        or recommendation logic.
     """
 
     def __init__(self):
@@ -836,26 +834,6 @@ class RecommendationEngine:
         record: Dict[str, Any],
     ) -> bool:
 
-        """
-        Detect whether a scheme itself is broadly designed
-        for self-employment / livelihood / enterprise support.
-
-        This is deliberately conservative.
-
-        A record such as:
-
-            PMEGP - Self Employment / New Enterprise
-
-        should qualify.
-
-        A record such as:
-
-            PMFME - Micro Food Processing Unit
-
-        should NOT qualify merely because its target
-        beneficiary contains "entrepreneurs".
-        """
-
         title = self.normalize_text(
             record.get("job_title")
         )
@@ -1101,8 +1079,6 @@ class RecommendationEngine:
             # Multi-word fallback
             #
             # Require ALL meaningful words.
-            # This is stricter than the previous
-            # "two words are enough" rule.
             # -------------------------------------------------
 
             words = [
@@ -1204,7 +1180,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "यह प्रशिक्षण लाभार्थी द्वारा बताई गई कौशल से संबंधित है।" 
+                "यह प्रशिक्षण लाभार्थी द्वारा बताई गई कौशल से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1445,7 +1421,7 @@ class RecommendationEngine:
             )
 
             reasons.append(
-                "यह अवसर लाभार्थी के आशा से संबंधित है।"
+                "यह अवसर लाभार्थी की बताई गई आकांक्षा से संबंधित है।"
             )
 
         # -----------------------------------------------------
@@ -1495,9 +1471,6 @@ class RecommendationEngine:
 
             else:
 
-                # Only allow employment preference alone
-                # for schemes that are explicitly general
-                # self-employment / livelihood support.
                 if (
                     self.is_self_employment_preference(
                         profile_groups.get(
@@ -1541,6 +1514,541 @@ class RecommendationEngine:
             "matched_signals": matched_signals,
             "reasons": reasons,
             "record": record,
+        }
+
+    # =========================================================
+    # HINDI OUTPUT HELPERS
+    #
+    # These functions ONLY prepare the final user-facing
+    # recommendation output.
+    #
+    # They do NOT participate in scoring or matching.
+    # =========================================================
+
+    @staticmethod
+    def get_hindi_value(
+        value: Any,
+    ) -> str:
+
+        if value is None:
+            return ""
+
+        # ---------------------------------------------
+        # Localized dictionary
+        # ---------------------------------------------
+
+        if isinstance(value, dict):
+
+            hindi_keys = [
+                "hi",
+                "hindi",
+                "description_hi",
+                "name_hi",
+                "title_hi",
+            ]
+
+            for key in hindi_keys:
+
+                candidate = value.get(key)
+
+                if candidate is not None:
+
+                    candidate = str(candidate).strip()
+
+                    if candidate:
+                        return candidate
+
+            # -----------------------------------------
+            # Fallback
+            #
+            # Used only when no Hindi value exists.
+            # -----------------------------------------
+
+            for key in [
+                "en",
+                "english",
+            ]:
+
+                candidate = value.get(key)
+
+                if candidate is not None:
+
+                    candidate = str(candidate).strip()
+
+                    if candidate:
+                        return candidate
+
+            return ""
+
+        return str(value).strip()
+
+    # =========================================================
+    # HINDI QUALIFICATION TITLE
+    # =========================================================
+
+    @staticmethod
+    def qualification_hindi_title(
+        record: Dict[str, Any],
+    ) -> str:
+
+        # ---------------------------------------------
+        # If dataset already contains a Hindi title,
+        # always use it.
+        # ---------------------------------------------
+
+        for key in [
+            "title_hi",
+            "name_hi",
+            "qualification_hi",
+        ]:
+
+            value = record.get(key)
+
+            if value:
+
+                value = str(value).strip()
+
+                if value:
+                    return value
+
+        title = record.get("title")
+
+        if isinstance(title, dict):
+
+            hindi_title = (
+                title.get("hi")
+                or title.get("hindi")
+                or title.get("name_hi")
+            )
+
+            if hindi_title:
+
+                return str(
+                    hindi_title
+                ).strip()
+
+            english_title = (
+                title.get("en")
+                or title.get("english")
+                or ""
+            )
+
+        else:
+
+            english_title = title or ""
+
+        english_title = str(
+            english_title
+        ).strip()
+
+        # ---------------------------------------------
+        # Known titles in the current prototype data.
+        #
+        # This is presentation-only. It does not affect
+        # matching or scoring.
+        # ---------------------------------------------
+
+        title_translations = {
+
+            "pm vishwakarma - tailor (darzi)":
+                "पीएम विश्वकर्मा योजना - दर्जी प्रशिक्षण",
+
+            "basics of papad, pickles and masala powder making":
+                "पापड़, अचार और मसाला पाउडर बनाने का प्रशिक्षण",
+
+            "paddy cultivator":
+                "धान की खेती का प्रशिक्षण",
+
+            "multi-skill technician (food processing)":
+                "बहु-कौशल तकनीशियन - खाद्य प्रसंस्करण",
+
+            "fundamentals of baking":
+                "बेकिंग की मूल बातें",
+
+            "bread & bakery qualification":
+                "ब्रेड और बेकरी प्रशिक्षण",
+
+            "micro-irrigation field assistant":
+                "सूक्ष्म सिंचाई फील्ड सहायक",
+
+            "service assistant (agriculture machineries)":
+                "कृषि मशीनरी सेवा सहायक",
+
+            "vermi-composter":
+                "वर्मी कम्पोस्ट बनाने का प्रशिक्षण",
+
+            "pm vishwakarma - potter (kumhar) / terracotta maker":
+                "पीएम विश्वकर्मा योजना - कुम्हार प्रशिक्षण",
+
+            "pm vishwakarma - blacksmith (lohar)":
+                "पीएम विश्वकर्मा योजना - लोहार प्रशिक्षण",
+
+            "pm vishwakarmma - plaster mason (basic)":
+                "पीएम विश्वकर्मा योजना - प्लास्टर मिस्त्री प्रशिक्षण",
+        }
+
+        normalized_title = (
+            english_title.lower()
+            .strip()
+        )
+
+        if normalized_title in title_translations:
+
+            return title_translations[
+                normalized_title
+            ]
+
+        # ---------------------------------------------
+        # Generic fallback.
+        #
+        # If a future record has no Hindi title,
+        # retain its existing title instead of
+        # returning an empty recommendation.
+        #
+        # This does not affect recommendation logic.
+        # ---------------------------------------------
+
+        return english_title
+
+    # =========================================================
+    # HINDI SCHEME TITLE
+    # =========================================================
+
+    @staticmethod
+    def scheme_hindi_title(
+        record: Dict[str, Any],
+    ) -> str:
+
+        # ---------------------------------------------
+        # Prefer explicit Hindi fields if present.
+        # ---------------------------------------------
+
+        for key in [
+            "job_title_hi",
+            "title_hi",
+            "name_hi",
+            "scheme_name_hi",
+        ]:
+
+            value = record.get(key)
+
+            if value:
+
+                value = str(value).strip()
+
+                if value:
+                    return value
+
+        title = record.get("job_title")
+
+        if isinstance(title, dict):
+
+            hindi_title = (
+                title.get("hi")
+                or title.get("hindi")
+                or title.get("name_hi")
+            )
+
+            if hindi_title:
+
+                return str(
+                    hindi_title
+                ).strip()
+
+            english_title = (
+                title.get("en")
+                or title.get("english")
+                or ""
+            )
+
+        else:
+
+            english_title = title or ""
+
+        english_title = str(
+            english_title
+        ).strip()
+
+        # ---------------------------------------------
+        # Current prototype scheme translations.
+        # ---------------------------------------------
+
+        title_translations = {
+
+            "pmegp - self employment / new enterprise":
+                "पीएमईजीपी - स्वरोजगार और नया उद्यम",
+
+            "pmfme - micro food processing unit":
+                "पीएमएफएमई - सूक्ष्म खाद्य प्रसंस्करण इकाई",
+
+            "data entry operator / it support (local e-mitra)":
+                "डाटा एंट्री ऑपरेटर / आईटी सहायता",
+
+            "day-nrlm - sustainable farm/non-farm livelihoods & shg support":
+                "डे-एनआरएलएम - टिकाऊ कृषि और गैर-कृषि आजीविका तथा स्वयं सहायता समूह सहायता",
+
+            "svep - early-stage rural enterprise":
+                "एसवीईपी - प्रारंभिक ग्रामीण उद्यम सहायता",
+
+            "ddu-gky - placement-oriented skill training":
+                "डीडीयू-जीकेवाई - रोजगार केंद्रित कौशल प्रशिक्षण",
+
+            "aif - post-harvest assets":
+                "एआईएफ - फसल कटाई के बाद की आधारभूत सुविधाएं",
+
+            "pm-kusum - solar pump & farm energy solarisation":
+                "पीएम-कुसुम - सौर पंप और कृषि ऊर्जा सौरकरण",
+
+            "pmksy - integrated cold chain & value addition":
+                "पीएमकेएसवाई - एकीकृत कोल्ड चेन और मूल्य संवर्धन",
+
+            "e-nam - electronic agricultural market linkage":
+                "ई-नाम - इलेक्ट्रॉनिक कृषि बाजार संपर्क",
+
+            "pm-ajay skill development & income generation (sc)":
+                "पीएम-अजय - कौशल विकास और आय सृजन",
+
+            "pm-ajay gia income generation micro-project support":
+                "पीएम-अजय जीआईए - आय सृजन सूक्ष्म परियोजना सहायता",
+
+            "pm-ajay gia livelihood enhancement & common facility":
+                "पीएम-अजय जीआईए - आजीविका संवर्धन और सामान्य सुविधा सहायता",
+
+            "pm-ajay gia economic development & district project":
+                "पीएम-अजय जीआईए - आर्थिक विकास और जिला परियोजना सहायता",
+        }
+
+        normalized_title = (
+            english_title.lower()
+            .strip()
+        )
+
+        if normalized_title in title_translations:
+
+            return title_translations[
+                normalized_title
+            ]
+
+        # ---------------------------------------------
+        # Generic fallback for future records.
+        # ---------------------------------------------
+
+        return english_title
+
+    # =========================================================
+    # HINDI QUALIFICATION RECORD
+    #
+    # IMPORTANT:
+    #
+    # This is ONLY presentation formatting.
+    # Internal scoring continues to use the original
+    # complete record.
+    # =========================================================
+
+    @staticmethod
+    def format_qualification_record(
+        record: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        output = {}
+
+        # ---------------------------------------------
+        # IDENTITY / INTERNAL REFERENCE
+        # ---------------------------------------------
+
+        if record.get("id") is not None:
+
+            output["id"] = record.get("id")
+
+        if record.get("nqr_id") is not None:
+
+            output["nqr_id"] = record.get("nqr_id")
+
+        # ---------------------------------------------
+        # HINDI USER-FACING FIELDS
+        # ---------------------------------------------
+
+        output["title"] = (
+            RecommendationEngine.qualification_hindi_title(
+                record
+            )
+        )
+
+        if record.get("level") is not None:
+
+            output["level"] = record.get("level")
+
+        if record.get("hours") is not None:
+
+            output["hours"] = record.get("hours")
+
+        # ---------------------------------------------
+        # Eligibility is currently English in the
+        # supplied dataset.
+        #
+        # Do NOT expose it directly.
+        # ---------------------------------------------
+
+        eligibility_hi = (
+            record.get("eligibility_hi")
+            or record.get("eligibility_hindi")
+        )
+
+        if eligibility_hi:
+
+            output["eligibility"] = (
+                str(eligibility_hi).strip()
+            )
+
+        # ---------------------------------------------
+        # Sector is metadata used internally but is
+        # not required in the Hindi user-facing result.
+        #
+        # Do not expose the English sector.
+        # ---------------------------------------------
+
+        description = (
+            record.get("course_description")
+            or record.get("description_hi")
+            or record.get("course_description_hi")
+        )
+
+        if description:
+
+            output["description"] = (
+                str(description).strip()
+            )
+
+        return output
+
+    # =========================================================
+    # HINDI SCHEME RECORD
+    # =========================================================
+
+    @staticmethod
+    def format_scheme_record(
+        record: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        output = {}
+
+        # ---------------------------------------------
+        # IDENTITY / INTERNAL REFERENCE
+        # ---------------------------------------------
+
+        if record.get("id") is not None:
+
+            output["id"] = record.get("id")
+
+        # ---------------------------------------------
+        # HINDI TITLE
+        # ---------------------------------------------
+
+        output["title"] = (
+            RecommendationEngine.scheme_hindi_title(
+                record
+            )
+        )
+
+        # ---------------------------------------------
+        # DO NOT expose:
+        #
+        # required_skill
+        # target_beneficiary
+        # support
+        #
+        # because these fields are currently English
+        # in the supplied dataset.
+        # ---------------------------------------------
+
+        description = (
+            record.get("job_description")
+            or record.get("description_hi")
+            or record.get("description")
+        )
+
+        if description:
+
+            output["description"] = (
+                str(description).strip()
+            )
+
+        return output
+
+    # =========================================================
+    # FINAL HINDI QUALIFICATION MATCH
+    # =========================================================
+
+    @staticmethod
+    def format_qualification_match(
+        result: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        original_record = result.get(
+            "record",
+            {},
+        )
+
+        return {
+
+            "score": result.get(
+                "score",
+                0,
+            ),
+
+            "matched_signals": result.get(
+                "matched_signals",
+                [],
+            ),
+
+            "reasons": result.get(
+                "reasons",
+                [],
+            ),
+
+            "record": (
+                RecommendationEngine.format_qualification_record(
+                    original_record
+                )
+            ),
+        }
+
+    # =========================================================
+    # FINAL HINDI SCHEME MATCH
+    # =========================================================
+
+    @staticmethod
+    def format_scheme_match(
+        result: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        original_record = result.get(
+            "record",
+            {},
+        )
+
+        return {
+
+            "score": result.get(
+                "score",
+                0,
+            ),
+
+            "matched_signals": result.get(
+                "matched_signals",
+                [],
+            ),
+
+            "reasons": result.get(
+                "reasons",
+                [],
+            ),
+
+            "record": (
+                RecommendationEngine.format_scheme_record(
+                    original_record
+                )
+            ),
         }
 
     # =========================================================
@@ -1647,26 +2155,111 @@ class RecommendationEngine:
             reverse=True,
         )
 
-        # -----------------------------------------------------
-        # FINAL RESPONSE
-        # -----------------------------------------------------
+        return {
+            "profile_groups": profile_groups,
+            "profile_terms": profile_terms,
+            "expanded_search_terms": expanded_terms,
+            "qualification_matches": [
+                self.format_qualification_match(item)
+                for item in qualification_matches[:limit]
+            ],
+            "job_or_scheme_matches": [
+                self.format_job_match(item)
+                for item in job_matches[:limit]
+            ],
+        }
+
+    # =========================================================
+    # FINAL DISPLAY RECORD FORMAT
+    # =========================================================
+
+    @staticmethod
+    def format_qualification_record(
+        record: Dict[str, Any],
+    ) -> Dict[str, Any]:
 
         return {
-
-            "profile_groups": profile_groups,
-
-            "profile_terms": profile_terms,
-
-            "expanded_search_terms": expanded_terms,
-
-            "qualification_matches": (
-                qualification_matches[:limit]
+            "id": record.get("id", ""),
+            "title": record.get("title", ""),
+            "description": (
+                record.get("course_description")
+                or record.get("description_hi")
+                or record.get("course_description_hi")
+                or record.get("description", "")
             ),
+            "nqr_id": record.get("nqr_id", ""),
+            "level": record.get("level", ""),
+            "hours": record.get("hours", ""),
+        }
 
-            "job_or_scheme_matches": (
-                job_matches[:limit]
+
+    @staticmethod
+    def format_job_record(
+        record: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        return {
+            "id": record.get("id", ""),
+            "title": (
+                record.get("job_title")
+                or record.get("title")
+                or record.get("name")
+                or ""
+            ),
+            "description": (
+                record.get("job_description")
+                or record.get("description_hi")
+                or record.get("description", "")
             ),
         }
 
 
+    @staticmethod
+    def format_qualification_match(
+        match: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        record = match.get("record", {})
+
+        return {
+            "score": match.get("score", 0),
+            "matched_signals": match.get(
+                "matched_signals",
+                [],
+            ),
+            "reasons": match.get(
+                "reasons",
+                [],
+            ),
+            "record": (
+                RecommendationEngine.format_qualification_record(
+                    record
+                )
+            ),
+        }
+
+
+    @staticmethod
+    def format_job_match(
+        match: Dict[str, Any],
+    ) -> Dict[str, Any]:
+
+        record = match.get("record", {})
+
+        return {
+            "score": match.get("score", 0),
+            "matched_signals": match.get(
+                "matched_signals",
+                [],
+            ),
+            "reasons": match.get(
+                "reasons",
+                [],
+            ),
+            "record": (
+                RecommendationEngine.format_job_record(
+                    record
+                )
+            ),
+        }
 recommendation_engine = RecommendationEngine()

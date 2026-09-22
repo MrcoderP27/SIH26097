@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 # pm_ajay_ai/
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DATA_FILE = PROJECT_ROOT / "SIH1" / "data.json"
+DATA_FILE = PROJECT_ROOT / "data.json"
 
 class DataStore:
     """

@@ -1884,9 +1884,358 @@ def extract_language(
 
     return None
 
+# ============================================================
+# TEXT NORMALIZATION FOR HINDI / HINGLISH / ENGLISH
+#
+# Purpose:
+#   Give existing deterministic extractors a second,
+#   normalized representation of the same user sentence.
+#
+# IMPORTANT:
+#   This does NOT replace the original user text.
+#   Original text is always tried first.
+# ============================================================
+
+def build_extraction_variants(
+    text: str,
+) -> List[str]:
+
+    if not isinstance(text, str):
+        return []
+
+    original = text.strip()
+
+    if not original:
+        return []
+
+    variants = [
+        original,
+    ]
+
+    normalized = normalize_text(original)
+
+    if normalized and normalized not in variants:
+        variants.append(normalized)
+
+    # --------------------------------------------------------
+    # Common Hinglish / ASR spelling normalization.
+    #
+    # This is intentionally conservative.
+    # We are NOT translating the complete sentence.
+    # --------------------------------------------------------
+
+    replacements = {
+        # Pronouns / sentence starters
+        "mein": "main",
+        "meine": "maine",
+        "mai": "main",
+
+        # Common verb spellings
+        "kr": "kar",
+        "kro": "karo",
+        "krna": "karna",
+        "krna": "karna",
+
+        # Auxiliary verbs
+        "hu": "hoon",
+        "hun": "hoon",
+        "hoo": "hoon",
+
+        # Education
+        "tk": "tak",
+        "pdh": "padh",
+        "pdha": "padha",
+        "pdhi": "padhi",
+        "padhai": "padhai",
+
+        # Common Hindi Roman forms
+        "dasvi": "dasvi",
+        "dasvin": "dasvi",
+        "dasvee": "dasvi",
+        "daswi": "dasvi",
+
+        "barahvi": "barahvi",
+        "barahvin": "barahvi",
+        "barahvee": "barahvi",
+        "barahwi": "barahvi",
+
+        "saatvi": "saatvi",
+        "satvi": "saatvi",
+        "saatvin": "saatvi",
+        "satvin": "saatvi",
+
+        "panchvi": "panchvi",
+        "paanchvi": "panchvi",
+
+        # Interest
+        "ruchi": "ruchi",
+        "pasand": "pasand",
+
+        # Employment
+        "naukri": "naukri",
+        "business": "business",
+        "buisness": "business",
+
+        # Common occupation words
+        "tailoring": "tailoring",
+        "tailor": "tailor",
+        "silai": "silai",
+        "darzi": "darzi",
+    }
+
+    words = normalized.split()
+
+    normalized_words = []
+
+    for word in words:
+
+        normalized_words.append(
+            replacements.get(
+                word,
+                word,
+            )
+        )
+
+    hinglish_normalized = " ".join(
+        normalized_words
+    )
+
+    if (
+        hinglish_normalized
+        and hinglish_normalized not in variants
+    ):
+        variants.append(
+            hinglish_normalized
+        )
+
+    # --------------------------------------------------------
+    # Education-specific canonical shadow text.
+    #
+    # Examples:
+    #
+    # kaksha dasvi mein padha hu
+    #       -> कक्षा 10वीं में पढ़ा हूँ
+    #
+    # maine barahvi tk padha hai
+    #       -> मैंने 12वीं तक पढ़ा है
+    #
+    # maine 12th tk padh chuka hu
+    #       -> मैंने 12वीं तक पढ़ा हूँ
+    #
+    # This variant is ONLY an additional extraction input.
+    # The original user sentence remains the evidence.
+    # --------------------------------------------------------
+
+    education_shadow = normalized
+
+    education_word_replacements = [
+
+        (
+            r"\bkaksha\s+dasvi\b",
+            "कक्षा 10वीं",
+        ),
+
+        (
+            r"\bclass\s+dasvi\b",
+            "कक्षा 10वीं",
+        ),
+
+        (
+            r"\bdasvi\b",
+            "10वीं",
+        ),
+
+        (
+            r"\bdasvin\b",
+            "10वीं",
+        ),
+
+        (
+            r"\bdaswi\b",
+            "10वीं",
+        ),
+
+        (
+            r"\bkaksha\s+barahvi\b",
+            "कक्षा 12वीं",
+        ),
+
+        (
+            r"\bclass\s+barahvi\b",
+            "कक्षा 12वीं",
+        ),
+
+        (
+            r"\bbarahvi\b",
+            "12वीं",
+        ),
+
+        (
+            r"\bbarahvin\b",
+            "12वीं",
+        ),
+
+        (
+            r"\bbarahwi\b",
+            "12वीं",
+        ),
+
+        (
+            r"\bkaksha\s+saatvi\b",
+            "कक्षा 7वीं",
+        ),
+
+        (
+            r"\bclass\s+saatvi\b",
+            "कक्षा 7वीं",
+        ),
+
+        (
+            r"\bsaatvi\b",
+            "7वीं",
+        ),
+
+        (
+            r"\bsatvi\b",
+            "7वीं",
+        ),
+
+        (
+            r"\bkaksha\s+panchvi\b",
+            "कक्षा 5वीं",
+        ),
+
+        (
+            r"\bclass\s+panchvi\b",
+            "कक्षा 5वीं",
+        ),
+
+        (
+            r"\bpanchvi\b",
+            "5वीं",
+        ),
+
+        (
+            r"\bpaanchvi\b",
+            "5वीं",
+        ),
+
+        # Numeric education
+        (
+            r"\b(\d{1,2})(?:st|nd|rd|th)\s*(?:tak|tk)\b",
+            r"\1वीं तक",
+        ),
+
+        (
+            r"\b(\d{1,2})(?:st|nd|rd|th)\s*(?:pass)\b",
+            r"\1वीं पास",
+        ),
+
+        (
+            r"\bclass\s+(\d{1,2})\b",
+            r"कक्षा \1",
+        ),
+
+        (
+            r"\bkaksha\s+(\d{1,2})\b",
+            r"कक्षा \1",
+        ),
+    ]
+
+    for pattern, replacement in (
+        education_word_replacements
+    ):
+
+        education_shadow = re.sub(
+            pattern,
+            replacement,
+            education_shadow,
+            flags=re.IGNORECASE,
+        )
+
+    # Common Roman-Hinglish education sentence
+    education_shadow = re.sub(
+        r"\b(?:maine|meine|main|mein|mai)\s+"
+        r"(\d{1,2})(?:st|nd|rd|th)\s*"
+        r"(?:tak|tk|mein|me|pass)\s+"
+        r"(?:padh|padha|padhi|padhai)\b",
+        r"मैंने \1वीं तक पढ़ाई",
+        education_shadow,
+        flags=re.IGNORECASE,
+    )
+
+    if education_shadow not in variants:
+        variants.append(
+            education_shadow
+        )
+
+    # --------------------------------------------------------
+    # Skill shadow text.
+    #
+    # mein tailoring kr skta hu
+    # -> I can tailoring
+    #
+    # mujhe tailoring aati hai
+    # -> I can tailoring
+    #
+    # This allows an existing English-capable skill extractor
+    # to recognize common Hinglish capability statements.
+    # --------------------------------------------------------
+
+    skill_shadow = normalized
+
+    skill_shadow = re.sub(
+        r"\b(?:main|mein|mai)\s+"
+        r"(.+?)\s+"
+        r"(?:kar|kr)\s+"
+        r"(?:sakta|sakti)\s+"
+        r"(?:hoon|hun|hu)\b",
+        r"I can \1",
+        skill_shadow,
+        flags=re.IGNORECASE,
+    )
+
+    skill_shadow = re.sub(
+        r"\bmujhe\s+(.+?)\s+"
+        r"(?:aata|aati|aate)\s+"
+        r"(?:hai|hain)\b",
+        r"I can \1",
+        skill_shadow,
+        flags=re.IGNORECASE,
+    )
+
+    skill_shadow = re.sub(
+        r"\b(?:main|mein|mai)\s+"
+        r"(.+?)\s+"
+        r"(?:kar|kr)\s+"
+        r"sakta\b",
+        r"I can \1",
+        skill_shadow,
+        flags=re.IGNORECASE,
+    )
+
+    if skill_shadow not in variants:
+        variants.append(
+            skill_shadow
+        )
+
+    return variants
 
 # ============================================================
 # DETERMINISTIC EXTRACTOR
+#
+# Extraction priority:
+#
+#   1. Original user text
+#   2. Normalized text
+#   3. Hinglish-normalized text
+#   4. Education shadow text
+#   5. Skill shadow text
+#
+# The first successful extraction wins.
+#
+# This prevents a normalized/translated representation from
+# overwriting a more accurate extraction from the original text.
 # ============================================================
 
 def deterministic_extract(
@@ -1897,6 +2246,14 @@ def deterministic_extract(
         str,
         Dict[str, Any],
     ] = {}
+
+    # --------------------------------------------------------
+    # Existing extractors.
+    #
+    # DO NOT change these field names.
+    # They must remain compatible with BeneficiaryProfile,
+    # ConversationEngine, and RecommendationEngine.
+    # --------------------------------------------------------
 
     extractors = {
 
@@ -1925,34 +2282,224 @@ def deterministic_extract(
         "language": extract_language,
     }
 
+    # --------------------------------------------------------
+    # Build multiple representations of the SAME user input.
+    #
+    # Original text always comes first.
+    # --------------------------------------------------------
+
+    text_variants = build_extraction_variants(
+        text
+    )
+
+    if not text_variants:
+        return extracted
+
+    # --------------------------------------------------------
+    # Try each field independently.
+    #
+    # If original Hindi/English extraction succeeds, we stop
+    # for that field.
+    #
+    # If it fails, we try the normalized variants.
+    # --------------------------------------------------------
+
     for field_name, extractor in (
         extractors.items()
     ):
 
-        try:
+        # ----------------------------------------------------
+        # Already extracted?
+        # This is mostly defensive.
+        # ----------------------------------------------------
 
-            result = extractor(
-                text
+        if field_name in extracted:
+            continue
+
+        for variant_index, variant in enumerate(
+            text_variants
+        ):
+
+            try:
+
+                result = extractor(
+                    variant
+                )
+
+            except Exception:
+
+                # One extractor or one variant should NEVER
+                # crash the complete conversation engine.
+                continue
+
+            if result is None:
+                continue
+
+            # ------------------------------------------------
+            # Validate extractor contract.
+            #
+            # Every extractor must return:
+            #
+            # (value, confidence, evidence)
+            # ------------------------------------------------
+
+            if not isinstance(
+                result,
+                tuple,
+            ):
+                continue
+
+            if len(result) != 3:
+                continue
+
+            value, confidence, evidence = (
+                result
             )
 
-        except Exception:
-            # One extractor should never crash
-            # the complete conversation engine.
-            continue
+            # ------------------------------------------------
+            # Validate confidence.
+            # ------------------------------------------------
 
-        if result is None:
-            continue
+            try:
 
-        value, confidence, evidence = result
+                confidence = float(
+                    confidence
+                )
 
-        extracted[field_name] = {
-            "value": value,
-            "confidence": confidence,
-            "evidence": evidence,
-        }
+            except (
+                TypeError,
+                ValueError,
+            ):
+
+                continue
+
+            confidence = max(
+                0.0,
+                min(
+                    1.0,
+                    confidence,
+                ),
+            )
+
+            # ------------------------------------------------
+            # Never accept empty values.
+            # ------------------------------------------------
+
+            cleaned_value = clean_value(
+                value
+            )
+
+            if cleaned_value is None:
+                continue
+
+            # ------------------------------------------------
+            # Evidence must always be a list.
+            # ------------------------------------------------
+
+            if evidence is None:
+
+                evidence = []
+
+            elif isinstance(
+                evidence,
+                str,
+            ):
+
+                evidence = [
+                    evidence
+                ]
+
+            elif not isinstance(
+                evidence,
+                list,
+            ):
+
+                evidence = [
+                    str(evidence)
+                ]
+
+            # ------------------------------------------------
+            # IMPORTANT:
+            #
+            # If extraction came from a normalized variant,
+            # preserve the ORIGINAL user sentence as evidence.
+            #
+            # This means your profile does not contain artificial
+            # normalized text as the user's actual statement.
+            # ------------------------------------------------
+
+            if variant_index > 0:
+
+                original_evidence = []
+
+                for item in evidence:
+
+                    if not isinstance(
+                        item,
+                        str,
+                    ):
+                        continue
+
+                    if item.strip():
+                        original_evidence.append(
+                            text.strip()
+                        )
+
+                if original_evidence:
+
+                    evidence = list(
+                        dict.fromkeys(
+                            original_evidence
+                        )
+                    )
+
+                else:
+
+                    evidence = [
+                        text.strip()
+                    ]
+
+            else:
+
+                evidence = [
+                    item.strip()
+                    for item in evidence
+                    if isinstance(
+                        item,
+                        str,
+                    )
+                    and item.strip()
+                ]
+
+                if not evidence:
+
+                    evidence = [
+                        text.strip()
+                    ]
+
+            # ------------------------------------------------
+            # Final field.
+            #
+            # IMPORTANT:
+            # The structure is EXACTLY the same as before.
+            # ------------------------------------------------
+
+            extracted[field_name] = {
+
+                "value": cleaned_value,
+
+                "confidence": confidence,
+
+                "evidence": evidence,
+            }
+
+            # ------------------------------------------------
+            # First valid result wins.
+            # ------------------------------------------------
+
+            break
 
     return extracted
-
 
 # ============================================================
 # LLM VALIDATION
@@ -1982,46 +2529,230 @@ FIELD_CONTEXT_PATTERNS = {
     ],
 
     "education": [
-        r"\bpadhai\b",
-        r"\bstudied\b",
-        r"\bstudy\b",
-        r"\bclass\b",
-        r"\bgrade\b",
-        r"\bpass\b",
-        r"\bवीं\b",
 
-        r"पढ़ाई",
-        r"कक्षा",
-        r"तक",
-        r"पास",
-    ],
+    # English
+    r"\bpadhai\b",
+    r"\bstudied\b",
+    r"\bstudy\b",
+    r"\bstudying\b",
+    r"\bclass\b",
+    r"\bgrade\b",
+    r"\bstandard\b",
+    r"\bpass\b",
+    r"\beducation\b",
+    r"\bqualification\b",
+    r"\bth\b",
+    r"\bst\b",
+    r"\bnd\b",
+    r"\brd\b",
+
+    # Hinglish
+    r"\bpadh\b",
+    r"\bpadha\b",
+    r"\bpadhi\b",
+    r"\bpadhai\b",
+    r"\bkaksha\b",
+    r"\bclass\b",
+    r"\bstandard\b",
+    r"\btak\b",
+    r"\btk\b",
+    r"\bpass\b",
+    r"\bdasvi\b",
+    r"\bdasvin\b",
+    r"\bdaswi\b",
+    r"\bbarahvi\b",
+    r"\bbarahvin\b",
+    r"\bbarahwi\b",
+    r"\bsaatvi\b",
+    r"\bsatvi\b",
+    r"\bpanchvi\b",
+    r"\bpaanchvi\b",
+
+    # Hindi
+    r"पढ़ाई",
+    r"पढ़ा",
+    r"पढ़ी",
+    r"पढ़े",
+    r"कक्षा",
+    r"क्लास",
+    r"शिक्षा",
+    r"योग्यता",
+    r"तक",
+    r"पास",
+    r"वीं",
+    r"वी",
+],
 
     "current_occupation": [
-        r"\bka\s+kaam\s+(?:karta|karti)\b",
-        r"\b(?:karta|karti)\s+(?:hoon|hun)\b",
-        r"\bwork\s+as\b",
-        r"\bwork\s+in\b",
-        r"\bworking\s+as\b",
-        r"\bi\s+do\b",
-        r"\boccupation\b",
 
-        r"का\s+काम\s+(?:करता|करती)",
-        r"(?:करता|करती)\s+हूँ",
-        r"(?:करता|करती)\s+हूं",
-        r"काम\s+करता",
-        r"काम\s+करती",
-    ],
+    # ============================================================
+    # 1. Hindi / Hinglish / English:
+    #    "मैं दर्जी का काम करता हूँ"
+    #    "main darzi ka kam krta hu"
+    #    "mein tailor ka kaam karta hoon"
+    #    "I do tailoring work"
+    # ============================================================
+
+    r"(?:मैं|main|mein|mai)\s+(?:अभी\s+)?(.+?)\s+(?:का|की|के|ka|ki|ke)?\s*(?:काम|kam|kaam)\s+(?:करता|करती|करते|karta|karti|karte|krta|krti|krte)\s*(?:हूँ|हूं|है|हैं|hoon|hun|hu|hai|hain|ho)\b",
+
+    r"(?:मैं|main|mein|mai)\s+(?:अभी\s+)?(.+?)\s+(?:का|की|के|ka|ki|ke)?\s*(?:काम|kam|kaam)\s+(?:करता|करती|करते|karta|karti|karte|krta|krti|krte)\b",
+
+    r"(.+?)\s+(?:का|की|के|ka|ki|ke)?\s*(?:काम|kam|kaam)\s+(?:करता|करती|करते|karta|karti|karte|krta|krti|krte)\s*(?:हूँ|हूं|है|हैं|hoon|hun|hu|hai|hain|ho)\b",
+
+    r"(.+?)\s+(?:का|की|के|ka|ki|ke)?\s*(?:काम|kam|kaam)\s+(?:करता|करती|करते|karta|karti|karte|krta|krti|krte)\b",
+
+
+    # ============================================================
+    # 2. "I am a ..." / "मैं ... हूँ"
+    #
+    # मैं दर्जी हूँ
+    # main darzi hoon
+    # I am a tailor
+    # मैं किसान हूँ
+    # ============================================================
+
+    r"(?:मैं|main|mein|mai)\s+(?:एक\s+|ek\s+|a\s+|an\s+)?(.+?)\s+(?:हूँ|हूं|है|हैं|hoon|hun|hu|hai|hain|ho)\b",
+
+    r"(?:i\s+am|i'm)\s+(?:a\s+|an\s+)?(.+?)(?:\s+by\s+occupation)?\b",
+
+
+    # ============================================================
+    # 3. Direct occupation statements
+    #
+    # दर्जी
+    # darzi
+    # tailor
+    # किसान
+    # farmer
+    #
+    # IMPORTANT:
+    # These are intentionally restricted to known occupation words
+    # so random sentences don't become occupations.
+    # ============================================================
+
+    r"\b(?:दर्जी|दर्ज़ी|दरजी|darzi|darji|darjee|tailor|tailoring|टेलर|टेलरिंग)\b",
+
+    r"\b(?:किसान|कृषक|kisan|kisaan|farmer|farming)\b",
+
+    r"\b(?:लोहार|lohar|blacksmith)\b",
+
+    r"\b(?:कुम्हार|kumhar|kumhaar|potter)\b",
+
+    r"\b(?:मिस्त्री|mistri|mistry|राजमिस्त्री|rajmistri|mason|masonry)\b",
+
+    r"\b(?:प्लास्टर|plaster|plasterer)\b",
+
+    r"\b(?:बढ़ई|बढई|badhai|badhaii|carpenter|carpentry)\b",
+
+    r"\b(?:नाई|nai|barber|hairdresser|hair\s+dresser)\b",
+
+    r"\b(?:मोची|mochi|cobbler|shoe\s+maker|shoemaker)\b",
+
+    r"\b(?:बुनकर|bunkar|weaver|weaving)\b",
+
+    r"\b(?:कारीगर|karigar|artisan)\b",
+
+    r"\b(?:दुकानदार|dukaandaar|dukandar|shopkeeper|shop\s+owner)\b",
+
+    r"\b(?:व्यापारी|vyapari|businessman|businesswoman|trader|trading)\b",
+
+    r"\b(?:मजदूर|mazdoor|majdoor|laborer|labourer|worker)\b",
+
+    r"\b(?:इलेक्ट्रीशियन|electrician|electric\s+work)\b",
+
+    r"\b(?:प्लंबर|plumber|plumbing)\b",
+
+    r"\b(?:वेल्डर|welder|welding)\b",
+
+    r"\b(?:मैकेनिक|mechanic|mechanical\s+work)\b",
+
+    r"\b(?:ड्राइवर|driver|driving|चालक|chalak)\b",
+
+    r"\b(?:रिक्शा\s+चालक|rickshaw\s+driver|auto\s+driver|ऑटो\s+चालक)\b",
+
+    r"\b(?:दूध\s+वाला|doodh\s+wala|milkman|dairy)\b",
+
+    r"\b(?:पशुपालक|pashupalak|livestock|cattle\s+rearing|पशुपालन)\b",
+
+    r"\b(?:माली|mali|gardener|gardening)\b",
+
+    r"\b(?:मछुआरा|machhuaara|machhua|fisherman|fishing)\b",
+
+    r"\b(?:कुक|cook|cooking|रसोइया|rasoiya)\b",
+
+    r"\b(?:बेकरी\s+वर्कर|bakery\s+worker|baker|baking)\b",
+
+    r"\b(?:हलवाई|halwai|sweet\s+maker|confectioner)\b",
+
+    r"\b(?:अचार\s+बनाना|achar\s+banana|pickle\s+making)\b",
+
+    r"\b(?:पापड़\s+बनाना|papad\s+banana|papad\s+making)\b",
+
+    r"\b(?:मसाला\s+बनाना|masala\s+banana|masala\s+making)\b",
+
+    r"\b(?:खाद्य\s+प्रसंस्करण|food\s+processing|food\s+processor)\b",
+
+    r"\b(?:डेटा\s+एंट्री|data\s+entry|data\s+entry\s+operator)\b",
+
+    r"\b(?:कंप्यूटर\s+ऑपरेटर|computer\s+operator)\b",
+
+    r"\b(?:टाइपिस्ट|typist|typing)\b",
+
+    r"\b(?:आईटी\s+सपोर्ट|it\s+support|computer\s+support)\b",
+
+    r"\b(?:दुकान\s+चलाता|दुकान\s+चलाती|shop\s+owner)\b",
+
+    r"\b(?:व्यवसाय\s+करता|व्यवसाय\s+करती|business\s+ karta|business\s+karna)\b",
+
+    r"\b(?:छोटा\s+व्यवसाय|small\s+business|small\s+enterprise)\b",
+
+    r"\b(?:सिलाई|silai|silayi|sewing)\b",
+
+    r"\b(?:कपड़े\s+सिलना|kapde\s+silna|clothes\s+stitching|garment\s+stitching)\b",
+
+    r"\b(?:खेती|kheti|agriculture|farmer|farming)\b",
+
+    r"\b(?:धान\s+की\s+खेती|dhan\s+ki\s+kheti|paddy\s+cultivation|paddy\s+cultivator)\b",
+
+    r"\b(?:वर्मी\s+कम्पोस्ट|vermi\s+compost|vermicompost|vermi\s+composter)\b",
+
+    r"\b(?:सिंचाई|sinchai|irrigation|micro\s+irrigation)\b",
+
+    r"\b(?:ट्रैक्टर\s+मिस्त्री|tractor\s+mechanic|agriculture\s+machinery\s+mechanic)\b",
+
+],
 
     "skills": [
-        r"\bmujhe\b.*\b(?:aati|aata|aate)\b",
-        r"\bskills?\b",
-        r"\bi\s+can\b",
-        r"\bi\s+have\s+skills\b",
 
-        r"मुझे\b.*(?:आती|आता|आते)",
-        r"कौशल",
-        r"हुनर",
-    ],
+    # English
+    r"\bskills?\b",
+    r"\bskillset\b",
+    r"\bi\s+can\b",
+    r"\bi\s+know\b",
+    r"\bi\s+have\s+skills\b",
+    r"\bskilled\s+in\b",
+    r"\bcapable\s+of\b",
+
+    # Hinglish
+    r"\bmujhe\b.*\b(?:aati|aata|aate)\b",
+    r"\bmujhe\b.*\b(?:aata|aati|aate)\s+hai\b",
+    r"\bmain\b.*\b(?:kar|kr)\s+sakta\b",
+    r"\bmein\b.*\b(?:kar|kr)\s+sakta\b",
+    r"\bmai\b.*\b(?:kar|kr)\s+sakta\b",
+    r"\bmain\b.*\b(?:kar|kr)\s+sakti\b",
+    r"\bmein\b.*\b(?:kar|kr)\s+sakti\b",
+    r"\bmai\b.*\b(?:kar|kr)\s+sakti\b",
+    r"\bhunar\b",
+    r"\bhunar\b",
+    r"\bskill\b",
+    r"\bskills\b",
+
+    # Hindi
+    r"मुझे\b.*(?:आती|आता|आते)",
+    r"कौशल",
+    r"हुनर",
+    r"क्षमता",
+],
 
     "interests": [
         r"\bmujhe\b.*\binterest\b",
